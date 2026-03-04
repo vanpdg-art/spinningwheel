@@ -27,5 +27,6 @@ export const CONFIG = {
     minFemaleDurationMs: 1600,
     femaleDurationOffsetMs: 250,
     extraRotations: 5,
+    frameIntervalMs: 33,
   },
 };

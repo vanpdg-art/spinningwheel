@@ -36,15 +36,22 @@ const state = {
 
 const elements = createElements();
 
-const getWheelPalette = (group) => {
-  const fallbackBase = state.theme?.base ?? CONFIG.theme.defaultBase;
-  const base = getThemeColor("--theme-base", fallbackBase);
-  const palettes = createWheelPalettes(base);
-  return palettes[group] ?? palettes.male;
+const themeRuntime = {
+  base: CONFIG.theme.defaultBase,
+  palettes: createWheelPalettes(CONFIG.theme.defaultBase),
 };
 
-const maleWheel = new Wheel(elements.maleCanvas, "male", getWheelPalette, getThemeColor);
-const femaleWheel = new Wheel(elements.femaleCanvas, "female", getWheelPalette, getThemeColor);
+const getWheelPalette = (group) => themeRuntime.palettes[group] ?? themeRuntime.palettes.male;
+
+const getCachedThemeColor = (variableName, fallback) => {
+  if (variableName === "--theme-base") {
+    return themeRuntime.base;
+  }
+  return getThemeColor(variableName, fallback);
+};
+
+const maleWheel = new Wheel(elements.maleCanvas, "male", getWheelPalette, getCachedThemeColor);
+const femaleWheel = new Wheel(elements.femaleCanvas, "female", getWheelPalette, getCachedThemeColor);
 
 const ui = createUiController(elements, {
   renderResult: () => renderResult(elements, state),
@@ -71,6 +78,8 @@ function renderAll() {
 function applyAndRenderTheme(baseHex) {
   const theme = applyTheme(baseHex, { themeColorInput: elements.themeColorInput });
   state.theme = theme;
+  themeRuntime.base = theme.base;
+  themeRuntime.palettes = createWheelPalettes(theme.base);
   drawWheels();
   return theme.base;
 }

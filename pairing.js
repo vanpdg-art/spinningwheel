@@ -14,6 +14,10 @@ function pairKey(maleId, femaleId) {
   return `${maleId}::${femaleId}`;
 }
 
+function spinOrder(state) {
+  return state.pairHistory.length + 1;
+}
+
 function randomPriority(usedPriorities) {
   const totalSlots = CONFIG.randomPriority.max - CONFIG.randomPriority.min + 1;
   const randomStart = Math.floor(Math.random() * totalSlots) + CONFIG.randomPriority.min;
@@ -127,8 +131,10 @@ export function isEitherPoolBelowThreshold(state, threshold = CONFIG.pool.lowThr
  */
 export function buildCandidatePairs(state) {
   const pairs = [];
+  const forcedPairs = [];
   let hasExclusiveCompatiblePair = false;
   let hasUsedPairMatch = false;
+  const currentSpin = spinOrder(state);
 
   for (const maleEntry of state.activeMale) {
     for (const femaleEntry of state.activeFemale) {
@@ -143,12 +149,31 @@ export function buildCandidatePairs(state) {
         continue;
       }
 
+      const isLockedExclusivePair = (
+        maleEntry.exclusiveID != null
+        && maleEntry.exclusiveID === femaleEntry.exclusiveID
+        && maleEntry.priority === femaleEntry.priority
+      );
+
+      if (isLockedExclusivePair && maleEntry.priority !== currentSpin) {
+        continue;
+      }
+
       pairs.push({
         male: maleEntry,
         female: femaleEntry,
         key,
         rank: Math.min(maleEntry.priority, femaleEntry.priority),
       });
+
+      if (isLockedExclusivePair && maleEntry.priority === currentSpin) {
+        forcedPairs.push({
+          male: maleEntry,
+          female: femaleEntry,
+          key,
+          rank: currentSpin,
+        });
+      }
     }
   }
 
@@ -174,13 +199,32 @@ export function buildCandidatePairs(state) {
       }
       return a.female.order - b.female.order;
     }),
+    forcedPairs,
     reason,
   };
 }
 
+function timeSaltedRandomIndex(length) {
+  if (length <= 1) {
+    return 0;
+  }
+
+  const now = Date.now();
+  const highRes = Math.floor((typeof performance !== "undefined" ? performance.now() : 0) * 1000);
+
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const randomChunk = new Uint32Array(1);
+    crypto.getRandomValues(randomChunk);
+    const mixed = (randomChunk[0] ^ now ^ highRes) >>> 0;
+    return mixed % length;
+  }
+
+  return Math.floor((Math.random() * length + (now % length) + (highRes % length)) % length);
+}
+
 export function pickPairFromCurrentPools(state) {
-  const { pairs: candidatePairs, reason } = buildCandidatePairs(state);
-  const nextPair = candidatePairs[0];
+  const { pairs: candidatePairs, forcedPairs, reason } = buildCandidatePairs(state);
+  const nextPair = forcedPairs[0] ?? candidatePairs[timeSaltedRandomIndex(candidatePairs.length)];
   if (!nextPair) {
     return { pair: null, reason, male: state.activeMale, female: state.activeFemale, usedPairs: state.usedPairs, pairHistory: state.pairHistory };
   }
