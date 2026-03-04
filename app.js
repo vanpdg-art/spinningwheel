@@ -14,6 +14,7 @@ const state = {
   spinning: false,
   usedPairs: new Set(),
   pairHistory: [],
+  roundState: null,
   settings: {
     spinDurationMs: 3600,
     recentCount: 3,
@@ -42,6 +43,7 @@ const elements = {
   pairResult: document.getElementById("pair-result"),
   pairMeta: document.getElementById("pair-meta"),
   refillStatus: document.getElementById("refill-status"),
+  newRoundBtn: document.getElementById("new-round-btn"),
 };
 
 function clamp(value, min, max) {
@@ -603,6 +605,8 @@ function isEitherPoolBelowThreshold(threshold = 1) {
 
 function buildCandidatePairs() {
   const pairs = [];
+  let hasExclusiveCompatiblePair = false;
+  let hasUsedPairMatch = false;
 
   for (const maleEntry of state.activeMale) {
     for (const femaleEntry of state.activeFemale) {
@@ -610,8 +614,10 @@ function buildCandidatePairs() {
         continue;
       }
 
+      hasExclusiveCompatiblePair = true;
       const key = pairKey(maleEntry.name, femaleEntry.name);
       if (state.usedPairs.has(key)) {
+        hasUsedPairMatch = true;
         continue;
       }
 
@@ -624,7 +630,14 @@ function buildCandidatePairs() {
     }
   }
 
-  return pairs.sort((a, b) => {
+  const reason = pairs.length > 0
+    ? null
+    : hasExclusiveCompatiblePair && hasUsedPairMatch
+      ? "used_pairs_exhausted"
+      : "exclusive_mismatch";
+
+  return {
+    pairs: pairs.sort((a, b) => {
     if (a.rank !== b.rank) {
       return a.rank - b.rank;
     }
@@ -638,14 +651,16 @@ function buildCandidatePairs() {
       return a.male.order - b.male.order;
     }
     return a.female.order - b.female.order;
-  });
+    }),
+    reason,
+  };
 }
 
 function pickPairFromCurrentPools() {
-  const candidatePairs = buildCandidatePairs();
+  const { pairs: candidatePairs, reason } = buildCandidatePairs();
   const nextPair = candidatePairs[0];
   if (!nextPair) {
-    return null;
+    return { pair: null, reason };
   }
 
   const maleWinner = removeByName("male", nextPair.male.name);
@@ -659,12 +674,41 @@ function pickPairFromCurrentPools() {
       state.activeFemale.push(femaleWinner);
       state.activeFemale.sort(sortByQueue);
     }
-    return null;
+    return { pair: null, reason: "exclusive_mismatch" };
   }
 
   state.usedPairs.add(nextPair.key);
   state.pairHistory.push({ male: maleWinner.name, female: femaleWinner.name, rank: nextPair.rank });
-  return { male: maleWinner, female: femaleWinner, rank: nextPair.rank };
+  return { pair: { male: maleWinner, female: femaleWinner, rank: nextPair.rank }, reason: null };
+}
+
+function startNewRound(message = "Started a new round.") {
+  state.usedPairs = new Set();
+  refillPool("male");
+  refillPool("female");
+  state.roundState = null;
+  elements.refillStatus.textContent = message;
+}
+
+function updateRoundState(reason) {
+  state.roundState = reason
+    ? {
+      reason,
+      requiresConfirmation: reason === "used_pairs_exhausted",
+    }
+    : null;
+}
+
+function getRoundStateMessage() {
+  if (!state.roundState) {
+    return "";
+  }
+
+  if (state.roundState.reason === "used_pairs_exhausted") {
+    return "All valid pairs used this round.";
+  }
+
+  return "No compatible exclusiveID pairs available.";
 }
 
 function wheelRotationForWinner(entries, winnerName, currentRotation) {
@@ -683,21 +727,33 @@ function wheelRotationForWinner(entries, winnerName, currentRotation) {
 }
 
 async function spinBoth() {
-  if (state.spinning) {
+  if (state.spinning || state.roundState?.requiresConfirmation) {
     return;
   }
 
   const refillMessages = ensurePoolsForSpin();
   const maleEntries = [...state.activeMale];
   const femaleEntries = [...state.activeFemale];
-  const pair = pickPairFromCurrentPools();
+  const { pair, reason } = pickPairFromCurrentPools();
 
   if (!pair) {
-    elements.pairResult.textContent = "No valid pair can be formed with current constraints.";
-    elements.refillStatus.textContent = refillMessages.join(" • ");
+    updateRoundState(reason);
+
+    if (reason === "used_pairs_exhausted") {
+      elements.pairResult.textContent = "All valid pairs used this round.";
+      elements.refillStatus.textContent = "Press Start New Round to continue spinning.";
+    } else {
+      elements.pairResult.textContent = "No compatible exclusiveID pairs available.";
+      elements.refillStatus.textContent = refillMessages.join(" • ");
+    }
+
     renderStatus();
+    maleWheel.draw(state.activeMale);
+    femaleWheel.draw(state.activeFemale);
     return;
   }
+
+  updateRoundState(null);
 
   state.spinning = true;
   elements.spinBtn.disabled = true;
@@ -729,14 +785,11 @@ async function spinBoth() {
 }
 
 function resetPools() {
-  refillPool("male");
-  refillPool("female");
+  startNewRound("Pools reset for a new round.");
   state.current = { male: null, female: null };
-  state.usedPairs = new Set();
   state.pairHistory = [];
   clearStoredThemeBaseColor();
   applyTheme(DEFAULT_THEME_BASE);
-  elements.refillStatus.textContent = "Pools reset for a new round.";
   renderAll();
 }
 
@@ -761,8 +814,20 @@ function renderResult() {
 }
 
 function renderStatus() {
+  const roundMessage = getRoundStateMessage();
+  const requiresConfirmation = Boolean(state.roundState?.requiresConfirmation);
+
   elements.malePoolStatus.textContent = `${state.activeMale.length} names left in active male pool`;
   elements.femalePoolStatus.textContent = `${state.activeFemale.length} names left in active female pool`;
+
+  elements.spinBtn.disabled = state.spinning || requiresConfirmation;
+  elements.newRoundBtn.hidden = !requiresConfirmation;
+
+  if (roundMessage) {
+    elements.refillStatus.textContent = requiresConfirmation
+      ? `${roundMessage} Start a new round to continue.`
+      : roundMessage;
+  }
 }
 
 function renderAll() {
@@ -774,6 +839,10 @@ function renderAll() {
 
 elements.spinBtn.addEventListener("click", spinBoth);
 elements.resetBtn.addEventListener("click", resetPools);
+elements.newRoundBtn.addEventListener("click", () => {
+  startNewRound();
+  renderAll();
+});
 bindThemeControls();
 bindSettingsPanelControls();
 bindAdditionalSettings();
