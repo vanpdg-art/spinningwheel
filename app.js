@@ -550,11 +550,11 @@ function pairKey(maleName, femaleName) {
 }
 
 function isExclusiveCompatible(maleEntry, femaleEntry) {
-  if (maleEntry.exclusiveID == null && femaleEntry.exclusiveID == null) {
+  if (maleEntry.exclusiveID == null || femaleEntry.exclusiveID == null) {
     return true;
   }
 
-  return maleEntry.exclusiveID != null && maleEntry.exclusiveID === femaleEntry.exclusiveID;
+  return maleEntry.exclusiveID === femaleEntry.exclusiveID;
 }
 
 function removeByName(group, name) {
