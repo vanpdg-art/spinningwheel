@@ -11,13 +11,24 @@ const state = {
   spinning: false,
   usedPairs: new Set(),
   pairHistory: [],
+  settings: {
+    spinDurationMs: 3600,
+    recentCount: 3,
+  },
 };
 
 const elements = {
   spinBtn: document.getElementById("spin-btn"),
   resetBtn: document.getElementById("reset-btn"),
+  settingsBtn: document.getElementById("settings-btn"),
+  settingsCloseBtn: document.getElementById("settings-close-btn"),
+  settingsBackdrop: document.getElementById("settings-backdrop"),
+  settingsPanel: document.getElementById("settings-panel"),
   themeColorInput: document.getElementById("theme-color"),
   themeResetBtn: document.getElementById("theme-reset-btn"),
+  spinDurationRange: document.getElementById("spin-duration-range"),
+  spinDurationValue: document.getElementById("spin-duration-value"),
+  historyCountInput: document.getElementById("history-count-input"),
   maleCanvas: document.getElementById("male-wheel"),
   femaleCanvas: document.getElementById("female-wheel"),
   maleName: document.getElementById("male-name"),
@@ -298,6 +309,75 @@ class Wheel {
 
 const maleWheel = new Wheel(elements.maleCanvas, "male");
 const femaleWheel = new Wheel(elements.femaleCanvas, "female");
+
+function updateSpinDurationLabel() {
+  if (!elements.spinDurationValue) {
+    return;
+  }
+
+  const seconds = (state.settings.spinDurationMs / 1000).toFixed(1);
+  elements.spinDurationValue.textContent = `${seconds}s`;
+}
+
+function syncSettingsInputs() {
+  if (elements.spinDurationRange) {
+    elements.spinDurationRange.value = String(state.settings.spinDurationMs);
+  }
+  if (elements.historyCountInput) {
+    elements.historyCountInput.value = String(state.settings.recentCount);
+  }
+  updateSpinDurationLabel();
+}
+
+function setSettingsPanelOpen(isOpen) {
+  if (!elements.settingsPanel || !elements.settingsBackdrop || !elements.settingsBtn) {
+    return;
+  }
+
+  elements.settingsPanel.classList.toggle("open", isOpen);
+  elements.settingsPanel.setAttribute("aria-hidden", String(!isOpen));
+  elements.settingsBackdrop.hidden = !isOpen;
+  elements.settingsBtn.setAttribute("aria-expanded", String(isOpen));
+}
+
+function bindSettingsPanelControls() {
+  if (elements.settingsBtn) {
+    elements.settingsBtn.addEventListener("click", () => setSettingsPanelOpen(true));
+  }
+
+  if (elements.settingsCloseBtn) {
+    elements.settingsCloseBtn.addEventListener("click", () => setSettingsPanelOpen(false));
+  }
+
+  if (elements.settingsBackdrop) {
+    elements.settingsBackdrop.addEventListener("click", () => setSettingsPanelOpen(false));
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      setSettingsPanelOpen(false);
+    }
+  });
+}
+
+function bindAdditionalSettings() {
+  if (elements.spinDurationRange) {
+    elements.spinDurationRange.addEventListener("input", (event) => {
+      const nextValue = Number(event.target.value);
+      state.settings.spinDurationMs = clamp(nextValue, 1800, 6000);
+      updateSpinDurationLabel();
+    });
+  }
+
+  if (elements.historyCountInput) {
+    elements.historyCountInput.addEventListener("input", (event) => {
+      const nextValue = Number(event.target.value);
+      state.settings.recentCount = clamp(Math.round(nextValue) || 3, 1, 8);
+      event.target.value = String(state.settings.recentCount);
+      renderResult();
+    });
+  }
+}
 
 function bindThemeControls() {
   if (elements.themeColorInput) {
@@ -583,9 +663,12 @@ async function spinBoth() {
   const maleFinal = wheelRotationForWinner(maleEntries, pair.male.name, maleWheel.rotation);
   const femaleFinal = wheelRotationForWinner(femaleEntries, pair.female.name, femaleWheel.rotation);
 
+  const maleDuration = state.settings.spinDurationMs;
+  const femaleDuration = Math.max(1600, state.settings.spinDurationMs - 250);
+
   await Promise.all([
-    maleWheel.animateTo(maleFinal, maleEntries, 3800),
-    femaleWheel.animateTo(femaleFinal, femaleEntries, 3500),
+    maleWheel.animateTo(maleFinal, maleEntries, maleDuration),
+    femaleWheel.animateTo(femaleFinal, femaleEntries, femaleDuration),
   ]);
 
   state.current = pair;
@@ -625,7 +708,7 @@ function renderResult() {
 
   const latest = `${state.current.male?.name ?? "(none)"} + ${state.current.female?.name ?? "(none)"}`;
   const history = state.pairHistory
-    .slice(-3)
+    .slice(-state.settings.recentCount)
     .map((pair) => `${pair.male} + ${pair.female}`)
     .join(" • ");
 
@@ -648,6 +731,9 @@ function renderAll() {
 elements.spinBtn.addEventListener("click", spinBoth);
 elements.resetBtn.addEventListener("click", resetPools);
 bindThemeControls();
+bindSettingsPanelControls();
+bindAdditionalSettings();
+syncSettingsInputs();
 applyTheme(DEFAULT_THEME_BASE);
 
 init();
