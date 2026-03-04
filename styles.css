@@ -164,8 +164,7 @@ canvas {
 .settings-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(32, 8, 22, 0.35);
-  backdrop-filter: blur(2px);
+  background: rgba(32, 8, 22, 0.16);
 }
 
 .settings-panel {
