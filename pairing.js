@@ -149,6 +149,16 @@ export function buildCandidatePairs(state) {
         continue;
       }
 
+      const isLockedExclusivePair = (
+        maleEntry.exclusiveID != null
+        && maleEntry.exclusiveID === femaleEntry.exclusiveID
+        && maleEntry.priority === femaleEntry.priority
+      );
+
+      if (isLockedExclusivePair && maleEntry.priority !== currentSpin) {
+        continue;
+      }
+
       pairs.push({
         male: maleEntry,
         female: femaleEntry,
@@ -156,12 +166,7 @@ export function buildCandidatePairs(state) {
         rank: Math.min(maleEntry.priority, femaleEntry.priority),
       });
 
-      if (
-        maleEntry.exclusiveID != null
-        && maleEntry.exclusiveID === femaleEntry.exclusiveID
-        && maleEntry.priority === currentSpin
-        && femaleEntry.priority === currentSpin
-      ) {
+      if (isLockedExclusivePair && maleEntry.priority === currentSpin) {
         forcedPairs.push({
           male: maleEntry,
           female: femaleEntry,

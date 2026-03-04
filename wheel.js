@@ -4,7 +4,6 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-
 function shortName(name, entryCount) {
   const tokens = String(name).trim().split(/\s+/).filter(Boolean);
   if (tokens.length <= 1) {
@@ -41,29 +40,43 @@ export class Wheel {
     this.rotation = 0;
     this.getPalette = getPalette;
     this.getThemeColor = getThemeColor;
+    this.surfaceCache = new Map();
   }
 
-  draw(entries, options = {}) {
-    const { skipLabels = false } = options;
-    const ctx = this.ctx;
-    const radius = this.canvas.width / 2;
+  cacheKey(entries, skipLabels, palette, colors, fontSize) {
+    const ids = entries.map((entry) => entry.id).join("|");
+    return [
+      ids,
+      entries.length,
+      skipLabels ? "1" : "0",
+      fontSize,
+      palette.join(","),
+      colors.text,
+      colors.empty,
+      colors.border,
+      colors.centerFill,
+      colors.centerStroke,
+    ].join("::");
+  }
+
+  buildSurface(entries, skipLabels, palette, colors, fontSize) {
+    const surface = document.createElement("canvas");
+    surface.width = this.canvas.width;
+    surface.height = this.canvas.height;
+    const ctx = surface.getContext("2d");
+    const radius = surface.width / 2;
     const center = radius;
     const sliceCount = Math.max(entries.length, 1);
     const angleStep = CONFIG.geometry.TWO_PI / sliceCount;
-    const fontSize = this.getLabelFontSize(entries.length);
-
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    const palette = this.getPalette(this.group);
 
     for (let i = 0; i < sliceCount; i += 1) {
-      const start = this.rotation + i * angleStep;
+      const start = i * angleStep;
       const end = start + angleStep;
       ctx.beginPath();
       ctx.moveTo(center, center);
       ctx.arc(center, center, radius - 6, start, end);
       ctx.closePath();
-      ctx.fillStyle = entries.length ? palette[i % palette.length] : this.getThemeColor("--theme-btn-secondary-bg", "#ffe5f4");
+      ctx.fillStyle = entries.length ? palette[i % palette.length] : colors.empty;
       ctx.fill();
 
       if (entries.length && !skipLabels) {
@@ -75,7 +88,7 @@ export class Wheel {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(mid + Math.PI / 2);
-        ctx.fillStyle = this.getThemeColor("--theme-text", "#5f1642");
+        ctx.fillStyle = colors.text;
         ctx.font = `bold ${fontSize}px Segoe UI, sans-serif`;
         ctx.textAlign = "center";
         const maxLabelWidth = this.getMaxLabelWidth(radius, angleStep);
@@ -88,17 +101,54 @@ export class Wheel {
 
     ctx.beginPath();
     ctx.arc(center, center, radius - 6, 0, CONFIG.geometry.TWO_PI);
-    ctx.strokeStyle = this.getThemeColor("--theme-wheel-border", this.getThemeColor("--theme-canvas-border", "#ffc2e3"));
+    ctx.strokeStyle = colors.border;
     ctx.lineWidth = 3;
     ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(center, center, 17, 0, CONFIG.geometry.TWO_PI);
-    ctx.fillStyle = this.getThemeColor("--theme-center-fill", "#fff");
+    ctx.fillStyle = colors.centerFill;
     ctx.fill();
-    ctx.strokeStyle = this.getThemeColor("--theme-center-stroke", this.getThemeColor("--theme-base", CONFIG.theme.defaultBase));
+    ctx.strokeStyle = colors.centerStroke;
     ctx.lineWidth = 3;
     ctx.stroke();
+
+    return surface;
+  }
+
+  draw(entries, options = {}) {
+    const { skipLabels = false } = options;
+    const ctx = this.ctx;
+    const radius = this.canvas.width / 2;
+
+    const palette = this.getPalette(this.group);
+    const colors = {
+      text: this.getThemeColor("--theme-text", "#5f1642"),
+      empty: this.getThemeColor("--theme-btn-secondary-bg", "#ffe5f4"),
+      border: this.getThemeColor("--theme-wheel-border", this.getThemeColor("--theme-canvas-border", "#ffc2e3")),
+      centerFill: this.getThemeColor("--theme-center-fill", "#fff"),
+      centerStroke: this.getThemeColor("--theme-center-stroke", this.getThemeColor("--theme-base", CONFIG.theme.defaultBase)),
+    };
+    const fontSize = this.getLabelFontSize(entries.length);
+    const key = this.cacheKey(entries, skipLabels, palette, colors, fontSize);
+
+    let surface = this.surfaceCache.get(key);
+    if (!surface) {
+      surface = this.buildSurface(entries, skipLabels, palette, colors, fontSize);
+      this.surfaceCache.set(key, surface);
+      if (this.surfaceCache.size > 8) {
+        const oldest = this.surfaceCache.keys().next().value;
+        this.surfaceCache.delete(oldest);
+      }
+    }
+
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.save();
+    ctx.translate(radius, radius);
+    ctx.rotate(this.rotation);
+    ctx.translate(-radius, -radius);
+    ctx.drawImage(surface, 0, 0);
+    ctx.restore();
   }
 
   getLabelFontSize(entryCount) {
