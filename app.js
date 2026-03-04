@@ -445,8 +445,8 @@ async function init() {
     }
 
     const data = await response.json();
-    state.allMale = normalizeGroup(data.male);
-    state.allFemale = normalizeGroup(data.female);
+    state.allMale = normalizeGroup(data.male, "male");
+    state.allFemale = normalizeGroup(data.female, "female");
     state.usedPairs = new Set();
     state.pairHistory = [];
     refillPool("male");
@@ -458,7 +458,7 @@ async function init() {
   }
 }
 
-function normalizeGroup(list) {
+function normalizeGroup(list, group) {
   if (!Array.isArray(list)) {
     return [];
   }
@@ -475,12 +475,18 @@ function normalizeGroup(list) {
         return null;
       }
 
+      const sourceId = entry.id ?? entry.sourceId ?? entry.sourceID;
+      const id = sourceId != null && String(sourceId).trim() !== ""
+        ? String(sourceId)
+        : `${group}:${index}`;
+
       const priority = Number.isFinite(Number(entry.priority))
         ? Number(entry.priority)
         : randomPriority(usedPriorities);
       const exclusiveID = Number.isFinite(Number(entry.exclusiveID)) ? Number(entry.exclusiveID) : null;
 
       return {
+        id,
         name: entry.name,
         excluded: Boolean(entry.excluded),
         priority,
@@ -545,8 +551,8 @@ function refillPool(group) {
   return entries.length;
 }
 
-function pairKey(maleName, femaleName) {
-  return `${maleName}::${femaleName}`;
+function pairKey(maleId, femaleId) {
+  return `${maleId}::${femaleId}`;
 }
 
 function isExclusiveCompatible(maleEntry, femaleEntry) {
@@ -557,9 +563,9 @@ function isExclusiveCompatible(maleEntry, femaleEntry) {
   return maleEntry.exclusiveID === femaleEntry.exclusiveID;
 }
 
-function removeByName(group, name) {
+function removeById(group, id) {
   const pool = activePool(group);
-  const index = pool.findIndex((entry) => entry.name === name);
+  const index = pool.findIndex((entry) => entry.id === id);
   if (index === -1) {
     return null;
   }
@@ -615,7 +621,7 @@ function buildCandidatePairs() {
       }
 
       hasExclusiveCompatiblePair = true;
-      const key = pairKey(maleEntry.name, femaleEntry.name);
+      const key = pairKey(maleEntry.id, femaleEntry.id);
       if (state.usedPairs.has(key)) {
         hasUsedPairMatch = true;
         continue;
@@ -663,8 +669,8 @@ function pickPairFromCurrentPools() {
     return { pair: null, reason };
   }
 
-  const maleWinner = removeByName("male", nextPair.male.name);
-  const femaleWinner = removeByName("female", nextPair.female.name);
+  const maleWinner = removeById("male", nextPair.male.id);
+  const femaleWinner = removeById("female", nextPair.female.id);
   if (!maleWinner || !femaleWinner) {
     if (maleWinner) {
       state.activeMale.push(maleWinner);
@@ -711,8 +717,8 @@ function getRoundStateMessage() {
   return "No compatible exclusiveID pairs available.";
 }
 
-function wheelRotationForWinner(entries, winnerName, currentRotation) {
-  const index = entries.findIndex((entry) => entry.name === winnerName);
+function wheelRotationForWinner(entries, winnerId, currentRotation) {
+  const index = entries.findIndex((entry) => entry.id === winnerId);
   if (index === -1 || entries.length === 0) {
     return currentRotation + TWO_PI * 5;
   }
@@ -758,8 +764,8 @@ async function spinBoth() {
   state.spinning = true;
   elements.spinBtn.disabled = true;
 
-  const maleFinal = wheelRotationForWinner(maleEntries, pair.male.name, maleWheel.rotation);
-  const femaleFinal = wheelRotationForWinner(femaleEntries, pair.female.name, femaleWheel.rotation);
+  const maleFinal = wheelRotationForWinner(maleEntries, pair.male.id, maleWheel.rotation);
+  const femaleFinal = wheelRotationForWinner(femaleEntries, pair.female.id, femaleWheel.rotation);
 
   const maleDuration = state.settings.spinDurationMs;
   const femaleDuration = Math.max(1600, state.settings.spinDurationMs - 250);
