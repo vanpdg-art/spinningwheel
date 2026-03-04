@@ -41,6 +41,7 @@ const elements = {
 };
 
 const DEFAULT_THEME_BASE = "#ff5eaf";
+const THEME_BASE_STORAGE_KEY = "pairSpinner.theme.baseColor";
 
 let palettes = {
   male: ["#ff9ecf", "#ff7dc0", "#ffaed8", "#ff92cb", "#ffbede", "#ff8fc6"],
@@ -226,6 +227,36 @@ function applyTheme(baseHex) {
     maleWheel.draw(state.activeMale);
     femaleWheel.draw(state.activeFemale);
   }
+
+  return theme.base;
+}
+
+function getStoredThemeBaseColor() {
+  try {
+    const value = sessionStorage.getItem(THEME_BASE_STORAGE_KEY);
+    if (!value || !hexToRgb(value)) {
+      return null;
+    }
+    return rgbToHex(hexToRgb(value));
+  } catch (_error) {
+    return null;
+  }
+}
+
+function storeThemeBaseColor(baseHex) {
+  try {
+    sessionStorage.setItem(THEME_BASE_STORAGE_KEY, baseHex);
+  } catch (_error) {
+    // Ignore storage write failures (private mode/quota/etc.).
+  }
+}
+
+function clearStoredThemeBaseColor() {
+  try {
+    sessionStorage.removeItem(THEME_BASE_STORAGE_KEY);
+  } catch (_error) {
+    // Ignore storage removal failures.
+  }
 }
 
 class Wheel {
@@ -382,13 +413,15 @@ function bindAdditionalSettings() {
 function bindThemeControls() {
   if (elements.themeColorInput) {
     elements.themeColorInput.addEventListener("input", (event) => {
-      applyTheme(event.target.value);
+      const appliedBase = applyTheme(event.target.value);
+      storeThemeBaseColor(appliedBase);
     });
   }
 
   if (elements.themeResetBtn) {
     elements.themeResetBtn.addEventListener("click", () => {
-      applyTheme(DEFAULT_THEME_BASE);
+      const appliedBase = applyTheme(DEFAULT_THEME_BASE);
+      storeThemeBaseColor(appliedBase);
     });
   }
 }
@@ -692,6 +725,8 @@ function resetPools() {
   state.current = { male: null, female: null };
   state.usedPairs = new Set();
   state.pairHistory = [];
+  clearStoredThemeBaseColor();
+  applyTheme(DEFAULT_THEME_BASE);
   elements.refillStatus.textContent = "Pools reset for a new round.";
   renderAll();
 }
@@ -734,6 +769,6 @@ bindThemeControls();
 bindSettingsPanelControls();
 bindAdditionalSettings();
 syncSettingsInputs();
-applyTheme(DEFAULT_THEME_BASE);
+applyTheme(getStoredThemeBaseColor() ?? DEFAULT_THEME_BASE);
 
 init();
