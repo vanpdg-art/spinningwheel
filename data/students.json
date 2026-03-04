@@ -1,13 +1,21 @@
 {
+  "priorityMode": true,
+  "priorityPairs": [
+    { "male": "Brian", "female": "Bella" },
+    { "male": "Carter", "female": "Chloe" }
+  ],
+  "exclusivePairs": [
+    { "male": "Alex", "female": "Ava" }
+  ],
   "male": [
-    { "name": "Alex", "priority": true },
+    { "name": "Alex" },
     { "name": "Brian" },
     { "name": "Carter" },
     { "name": "Diego", "excluded": true },
     { "name": "Evan" }
   ],
   "female": [
-    { "name": "Ava", "priority": true },
+    { "name": "Ava" },
     { "name": "Bella" },
     { "name": "Chloe" },
     { "name": "Diana" },
