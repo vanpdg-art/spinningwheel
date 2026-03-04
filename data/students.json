@@ -1,16 +1,176 @@
 {
   "male": [
-    { "name": "Alex", "priority": 1, "exclusiveID": 1 },
-    { "name": "Brian", "priority": 2 },
-    { "name": "Carter", "priority": 3 },
-    { "name": "Diego", "excluded": true },
-    { "name": "Evan", "priority": 4 }
+    {
+      "name": "Nguyễn Phong Anh"
+    },
+    {
+      "name": "Nguyễn Trần Quang Anh"
+    },
+    {
+      "name": "Bùi Gia Bảo"
+    },
+    {
+      "name": "Đỗ Minh Gia Bảo"
+    },
+    {
+      "name": "Nguyễn Gia Bảo"
+    },
+    {
+      "name": "Hoàng Tuấn Danh"
+    },
+    {
+      "name": "Bùi Nguyễn Hoàng"
+    },
+    {
+      "name": "Đoàn Minh Khang"
+    },
+    {
+      "name": "Bùi Duy Khánh"
+    },
+    {
+      "name": "Lưu Thành Lâm"
+    },
+    {
+      "name": "Lê Quang Minh"
+    },
+    {
+      "name": "Nguyễn Đức Minh",
+      "priority": 7,
+      "exclusiveID": 1002
+    },
+    {
+      "name": "Nguyễn Nhật Minh"
+    },
+    {
+      "name": "Chu Bảo Nam",
+      "priority": 3,
+      "exclusiveID": 1001
+    },
+    {
+      "name": "Hoàng Hải Nam"
+    },
+    {
+      "name": "Trần Ngọc Hải Nam"
+    },
+    {
+      "name": "Đặng Đình Nghĩa"
+    },
+    {
+      "name": "Nguyễn Tiến Nguyên"
+    },
+    {
+      "name": "Nguyễn Đức Tâm"
+    },
+    {
+      "name": "Vũ Khánh Thiện"
+    },
+    {
+      "name": "Nguyễn Đức Quang"
+    },
+    {
+      "name": "Phạm Quốc Bảo"
+    }
   ],
   "female": [
-    { "name": "Ava", "priority": 1, "exclusiveID": 1 },
-    { "name": "Bella", "priority": 2 },
-    { "name": "Chloe", "priority": 3 },
-    { "name": "Diana", "priority": 4 },
-    { "name": "Emma", "excluded": true }
+    {
+      "name": "Phạm Ngân An"
+    },
+    {
+      "name": "Bùi Ngọc Tuệ Anh"
+    },
+    {
+      "name": "Lê Hoài Anh"
+    },
+    {
+      "name": "Nguyễn Hà Anh A"
+    },
+    {
+      "name": "Nguyễn Hà Anh B"
+    },
+    {
+      "name": "Trần Đỗ Ngọc Anh"
+    },
+    {
+      "name": "Trần Mai Anh"
+    },
+    {
+      "name": "Vũ Minh Châu",
+      "priority": 3,
+      "exclusiveID": 1001
+    },
+    {
+      "name": "Lê Khánh Chi"
+    },
+    {
+      "name": "Phạm Ngọc Hân"
+    },
+    {
+      "name": "Vũ Bảo Hân"
+    },
+    {
+      "name": "Nguyễn Phạm Hồng Hạnh"
+    },
+    {
+      "name": "Đào Ngọc Khuê"
+    },
+    {
+      "name": "Lê Hà Linh"
+    },
+    {
+      "name": "Nguyễn Nhật Linh"
+    },
+    {
+      "name": "Lương Tuệ Linh"
+    },
+    {
+      "name": "Mai Phương Linh"
+    },
+    {
+      "name": "Quách Lê Phương Linh"
+    },
+    {
+      "name": "Trần Trà My"
+    },
+    {
+      "name": "Đồng Kim Ngân"
+    },
+    {
+      "name": "Bùi Minh Ngọc"
+    },
+    {
+      "name": "Lưu Minh Ngọc"
+    },
+    {
+      "name": "Đỗ Thúy Nguyên"
+    },
+    {
+      "name": "Tô Yến Nhi"
+    },
+    {
+      "name": "Nguyễn Thái Bảo Quyên"
+    },
+    {
+      "name": "Vũ Hoàng Quyên"
+    },
+    {
+      "name": "Ngô Bảo Hà"
+    },
+    {
+      "name": "Nguyễn Minh Hà"
+    },
+    {
+      "name": "Trần Ngọc Minh",
+      "priority": 7,
+      "exclusiveID": 1002
+    },
+    {
+      "name": "Hồ Bảo Trân"
+    },
+    {
+      "name": "Hoàng Lam Vân"
+    },
+    {
+      "name": "Hoàng Tuệ Lâm"
+    }
   ]
 }
