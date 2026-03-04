@@ -1,60 +1,176 @@
 {
   "male": [
-    { "name": "Nguyễn Phong Anh", "priority": 1 },
-    { "name": "Nguyễn Trần Quang Anh", "priority": 2 },
-    { "name": "Bùi Gia Bảo", "priority": 4 },
-    { "name": "Đỗ Minh Gia Bảo", "priority": 5 },
-    { "name": "Nguyễn Gia Bảo", "priority": 6 },
-    { "name": "Hoàng Tuấn Danh", "priority": 8 },
-    { "name": "Bùi Nguyễn Hoàng", "priority": 9 },
-    { "name": "Đoàn Minh Khang", "priority": 10 },
-    { "name": "Bùi Duy Khánh", "priority": 11 },
-    { "name": "Lưu Thành Lâm", "priority": 12 },
-    { "name": "Lê Quang Minh", "priority": 13 },
-    { "name": "Nguyễn Đức Minh", "priority": 7, "exclusiveID": 1002 },
-    { "name": "Nguyễn Nhật Minh", "priority": 14 },
-    { "name": "Chu Bảo Nam", "priority": 3, "exclusiveID": 1001 },
-    { "name": "Hoàng Hải Nam", "priority": 15 },
-    { "name": "Trần Ngọc Hải Nam", "priority": 16 },
-    { "name": "Đặng Đình Nghĩa", "priority": 17 },
-    { "name": "Nguyễn Tiến Nguyên", "priority": 18 },
-    { "name": "Nguyễn Đức Tâm", "priority": 19 },
-    { "name": "Vũ Khánh Thiện", "priority": 20 },
-    { "name": "Nguyễn Đức Quang", "priority": 21 },
-    { "name": "Phạm Quốc Bảo", "priority": 22 }
+    {
+      "name": "Nguyễn Phong Anh"
+    },
+    {
+      "name": "Nguyễn Trần Quang Anh"
+    },
+    {
+      "name": "Bùi Gia Bảo"
+    },
+    {
+      "name": "Đỗ Minh Gia Bảo"
+    },
+    {
+      "name": "Nguyễn Gia Bảo"
+    },
+    {
+      "name": "Hoàng Tuấn Danh"
+    },
+    {
+      "name": "Bùi Nguyễn Hoàng"
+    },
+    {
+      "name": "Đoàn Minh Khang"
+    },
+    {
+      "name": "Bùi Duy Khánh"
+    },
+    {
+      "name": "Lưu Thành Lâm"
+    },
+    {
+      "name": "Lê Quang Minh"
+    },
+    {
+      "name": "Nguyễn Đức Minh",
+      "priority": 7,
+      "exclusiveID": 1002
+    },
+    {
+      "name": "Nguyễn Nhật Minh"
+    },
+    {
+      "name": "Chu Bảo Nam",
+      "priority": 3,
+      "exclusiveID": 1001
+    },
+    {
+      "name": "Hoàng Hải Nam"
+    },
+    {
+      "name": "Trần Ngọc Hải Nam"
+    },
+    {
+      "name": "Đặng Đình Nghĩa"
+    },
+    {
+      "name": "Nguyễn Tiến Nguyên"
+    },
+    {
+      "name": "Nguyễn Đức Tâm"
+    },
+    {
+      "name": "Vũ Khánh Thiện"
+    },
+    {
+      "name": "Nguyễn Đức Quang"
+    },
+    {
+      "name": "Phạm Quốc Bảo"
+    }
   ],
   "female": [
-    { "name": "Phạm Ngân An", "priority": 101 },
-    { "name": "Bùi Ngọc Tuệ Anh", "priority": 102 },
-    { "name": "Lê Hoài Anh", "priority": 103 },
-    { "name": "Nguyễn Hà Anh A", "priority": 104 },
-    { "name": "Nguyễn Hà Anh B", "priority": 105 },
-    { "name": "Trần Đỗ Ngọc Anh", "priority": 106 },
-    { "name": "Trần Mai Anh", "priority": 107 },
-    { "name": "Vũ Minh Châu", "priority": 3, "exclusiveID": 1001 },
-    { "name": "Lê Khánh Chi", "priority": 108 },
-    { "name": "Phạm Ngọc Hân", "priority": 109 },
-    { "name": "Vũ Bảo Hân", "priority": 110 },
-    { "name": "Nguyễn Phạm Hồng Hạnh", "priority": 111 },
-    { "name": "Đào Ngọc Khuê", "priority": 112 },
-    { "name": "Lê Hà Linh", "priority": 113 },
-    { "name": "Nguyễn Nhật Linh", "priority": 114 },
-    { "name": "Lương Tuệ Linh", "priority": 115 },
-    { "name": "Mai Phương Linh", "priority": 116 },
-    { "name": "Quách Lê Phương Linh", "priority": 117 },
-    { "name": "Trần Trà My", "priority": 118 },
-    { "name": "Đồng Kim Ngân", "priority": 119 },
-    { "name": "Bùi Minh Ngọc", "priority": 120 },
-    { "name": "Lưu Minh Ngọc", "priority": 121 },
-    { "name": "Đỗ Thúy Nguyên", "priority": 122 },
-    { "name": "Tô Yến Nhi", "priority": 123 },
-    { "name": "Nguyễn Thái Bảo Quyên", "priority": 124 },
-    { "name": "Vũ Hoàng Quyên", "priority": 125 },
-    { "name": "Ngô Bảo Hà", "priority": 126 },
-    { "name": "Nguyễn Minh Hà", "priority": 127 },
-    { "name": "Trần Ngọc Minh", "priority": 7, "exclusiveID": 1002 },
-    { "name": "Hồ Bảo Trân", "priority": 128 },
-    { "name": "Hoàng Lam Vân", "priority": 129 },
-    { "name": "Hoàng Tuệ Lâm", "priority": 130 }
+    {
+      "name": "Phạm Ngân An"
+    },
+    {
+      "name": "Bùi Ngọc Tuệ Anh"
+    },
+    {
+      "name": "Lê Hoài Anh"
+    },
+    {
+      "name": "Nguyễn Hà Anh A"
+    },
+    {
+      "name": "Nguyễn Hà Anh B"
+    },
+    {
+      "name": "Trần Đỗ Ngọc Anh"
+    },
+    {
+      "name": "Trần Mai Anh"
+    },
+    {
+      "name": "Vũ Minh Châu",
+      "priority": 3,
+      "exclusiveID": 1001
+    },
+    {
+      "name": "Lê Khánh Chi"
+    },
+    {
+      "name": "Phạm Ngọc Hân"
+    },
+    {
+      "name": "Vũ Bảo Hân"
+    },
+    {
+      "name": "Nguyễn Phạm Hồng Hạnh"
+    },
+    {
+      "name": "Đào Ngọc Khuê"
+    },
+    {
+      "name": "Lê Hà Linh"
+    },
+    {
+      "name": "Nguyễn Nhật Linh"
+    },
+    {
+      "name": "Lương Tuệ Linh"
+    },
+    {
+      "name": "Mai Phương Linh"
+    },
+    {
+      "name": "Quách Lê Phương Linh"
+    },
+    {
+      "name": "Trần Trà My"
+    },
+    {
+      "name": "Đồng Kim Ngân"
+    },
+    {
+      "name": "Bùi Minh Ngọc"
+    },
+    {
+      "name": "Lưu Minh Ngọc"
+    },
+    {
+      "name": "Đỗ Thúy Nguyên"
+    },
+    {
+      "name": "Tô Yến Nhi"
+    },
+    {
+      "name": "Nguyễn Thái Bảo Quyên"
+    },
+    {
+      "name": "Vũ Hoàng Quyên"
+    },
+    {
+      "name": "Ngô Bảo Hà"
+    },
+    {
+      "name": "Nguyễn Minh Hà"
+    },
+    {
+      "name": "Trần Ngọc Minh",
+      "priority": 7,
+      "exclusiveID": 1002
+    },
+    {
+      "name": "Hồ Bảo Trân"
+    },
+    {
+      "name": "Hoàng Lam Vân"
+    },
+    {
+      "name": "Hoàng Tuệ Lâm"
+    }
   ]
 }
