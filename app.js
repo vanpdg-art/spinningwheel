@@ -1,5 +1,6 @@
 const TWO_PI = Math.PI * 2;
-const DEFAULT_PRIORITY = 9999;
+const RANDOM_PRIORITY_MIN = 1;
+const RANDOM_PRIORITY_MAX = 9999;
 
 const state = {
   allMale: [],
@@ -139,13 +140,21 @@ function normalizeGroup(list) {
     return [];
   }
 
+  const usedPriorities = new Set(
+    list
+      .map((entry) => Number(entry?.priority))
+      .filter((priority) => Number.isFinite(priority)),
+  );
+
   return list
     .map((entry, index) => {
       if (!entry || typeof entry.name !== "string") {
         return null;
       }
 
-      const priority = Number.isFinite(Number(entry.priority)) ? Number(entry.priority) : DEFAULT_PRIORITY;
+      const priority = Number.isFinite(Number(entry.priority))
+        ? Number(entry.priority)
+        : randomPriority(usedPriorities);
       const exclusiveID = Number.isFinite(Number(entry.exclusiveID)) ? Number(entry.exclusiveID) : null;
 
       return {
@@ -157,6 +166,23 @@ function normalizeGroup(list) {
       };
     })
     .filter(Boolean);
+}
+
+function randomPriority(usedPriorities) {
+  const totalSlots = RANDOM_PRIORITY_MAX - RANDOM_PRIORITY_MIN + 1;
+  const randomStart = Math.floor(Math.random() * totalSlots) + RANDOM_PRIORITY_MIN;
+
+  for (let offset = 0; offset < totalSlots; offset += 1) {
+    const candidate = RANDOM_PRIORITY_MIN + ((randomStart - RANDOM_PRIORITY_MIN + offset) % totalSlots);
+    if (!usedPriorities.has(candidate)) {
+      usedPriorities.add(candidate);
+      return candidate;
+    }
+  }
+
+  const fallback = RANDOM_PRIORITY_MAX + usedPriorities.size + 1;
+  usedPriorities.add(fallback);
+  return fallback;
 }
 
 function fullGroup(group) {
