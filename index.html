@@ -53,9 +53,9 @@
     </main>
 
     <div id="settings-backdrop" class="settings-backdrop" hidden></div>
-    <aside id="settings-panel" class="settings-panel" aria-label="app settings" aria-hidden="true">
+    <aside id="settings-panel" class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-panel-title" aria-label="app settings" aria-hidden="true" tabindex="-1">
       <div class="settings-header">
-        <h2>Settings</h2>
+        <h2 id="settings-panel-title">Settings</h2>
         <button id="settings-close-btn" class="btn btn-secondary" type="button">Close</button>
       </div>
 
