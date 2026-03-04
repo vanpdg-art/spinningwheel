@@ -794,6 +794,8 @@ function resetPools() {
   startNewRound("Pools reset for a new round.");
   state.current = { male: null, female: null };
   state.pairHistory = [];
+  maleWheel.rotation = 0;
+  femaleWheel.rotation = 0;
   clearStoredThemeBaseColor();
   applyTheme(DEFAULT_THEME_BASE);
   renderAll();
