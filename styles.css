@@ -8,7 +8,10 @@
   --theme-bg-end: #ffe8f5;
   --theme-btn-secondary-bg: #ffe5f4;
   --theme-canvas-border: #ffc2e3;
+  --theme-wheel-border: #ff9dd0;
   --theme-pointer: #ff2f9c;
+  --theme-center-fill: #ffffff;
+  --theme-center-stroke: #ff4ea8;
   --theme-accent-muted: #8a3a67;
   --card-bg: rgba(255, 255, 255, 0.82);
   --shadow: 0 14px 30px rgba(180, 40, 120, 0.2);

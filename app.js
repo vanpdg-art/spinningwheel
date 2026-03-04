@@ -2,6 +2,9 @@ const TWO_PI = Math.PI * 2;
 const RANDOM_PRIORITY_MIN = 1;
 const RANDOM_PRIORITY_MAX = 9999;
 
+const DEFAULT_THEME_BASE = "#ff5eaf";
+const THEME_BASE_STORAGE_KEY = "pairSpinner.theme.baseColor";
+
 const state = {
   allMale: [],
   allFemale: [],
@@ -15,6 +18,7 @@ const state = {
     spinDurationMs: 3600,
     recentCount: 3,
   },
+  theme: null,
 };
 
 const elements = {
@@ -38,14 +42,6 @@ const elements = {
   pairResult: document.getElementById("pair-result"),
   pairMeta: document.getElementById("pair-meta"),
   refillStatus: document.getElementById("refill-status"),
-};
-
-const DEFAULT_THEME_BASE = "#ff5eaf";
-const THEME_BASE_STORAGE_KEY = "pairSpinner.theme.baseColor";
-
-let palettes = {
-  male: ["#ff9ecf", "#ff7dc0", "#ffaed8", "#ff92cb", "#ffbede", "#ff8fc6"],
-  female: ["#ffb6df", "#ff97d0", "#ffc9e8", "#ff84c7", "#ffaddb", "#ff6dbc"],
 };
 
 function clamp(value, min, max) {
@@ -171,30 +167,34 @@ function buildTheme(baseHex) {
     bgEnd: adjustLightness(safeBase, 0.31),
     secondaryBg: adjustLightness(safeBase, 0.27),
     canvasBorder: adjustLightness(safeBase, 0.2),
+    wheelBorder: adjustLightness(safeBase, 0.15),
     pointer: adjustLightness(safeBase, -0.06),
     mutedAccent: adjustLightness(safeBase, -0.18),
+    centerFill: "#fff",
+    centerStroke: adjustLightness(safeBase, -0.1),
   };
 }
 
-function updatePalettes(theme) {
-  palettes = {
-    male: [
-      adjustLightness(theme.base, 0.15),
-      adjustLightness(theme.base, 0.07),
-      adjustLightness(theme.base, 0.2),
-      adjustLightness(theme.base, 0.1),
-      adjustLightness(theme.base, 0.24),
-      adjustLightness(theme.base, 0.05),
-    ],
-    female: [
-      adjustLightness(theme.base, 0.19),
-      adjustLightness(theme.base, 0.11),
-      adjustLightness(theme.base, 0.26),
-      adjustLightness(theme.base, 0.03),
-      adjustLightness(theme.base, 0.16),
-      adjustLightness(theme.base, -0.02),
-    ],
+function createWheelPalettes(baseHex) {
+  return {
+    male: [0.15, 0.07, 0.2, 0.1, 0.24, 0.05].map((offset) => adjustLightness(baseHex, offset)),
+    female: [0.19, 0.11, 0.26, 0.03, 0.16, -0.02].map((offset) => adjustLightness(baseHex, offset)),
   };
+}
+
+function getThemeValue(variableName, fallback) {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  return getThemeColor(variableName, fallback);
+}
+
+function getWheelPalette(group) {
+  const fallbackBase = state.theme?.base ?? DEFAULT_THEME_BASE;
+  const base = getThemeValue("--theme-base", fallbackBase);
+  const palettes = createWheelPalettes(base);
+  return palettes[group] ?? palettes.male;
 }
 
 function getThemeColor(variableName, fallback) {
@@ -204,6 +204,7 @@ function getThemeColor(variableName, fallback) {
 
 function applyTheme(baseHex) {
   const theme = buildTheme(baseHex);
+  state.theme = theme;
   const rootStyle = document.documentElement.style;
 
   rootStyle.setProperty("--theme-base", theme.base);
@@ -215,18 +216,18 @@ function applyTheme(baseHex) {
   rootStyle.setProperty("--theme-bg-end", theme.bgEnd);
   rootStyle.setProperty("--theme-btn-secondary-bg", theme.secondaryBg);
   rootStyle.setProperty("--theme-canvas-border", theme.canvasBorder);
+  rootStyle.setProperty("--theme-wheel-border", theme.wheelBorder);
   rootStyle.setProperty("--theme-pointer", theme.pointer);
   rootStyle.setProperty("--theme-accent-muted", theme.mutedAccent);
+  rootStyle.setProperty("--theme-center-fill", theme.centerFill);
+  rootStyle.setProperty("--theme-center-stroke", theme.centerStroke);
 
   if (elements.themeColorInput) {
     elements.themeColorInput.value = theme.base;
   }
 
-  updatePalettes(theme);
-  if (state.activeMale.length || state.activeFemale.length) {
-    maleWheel.draw(state.activeMale);
-    femaleWheel.draw(state.activeFemale);
-  }
+  maleWheel.draw(state.activeMale);
+  femaleWheel.draw(state.activeFemale);
 
   return theme.base;
 }
@@ -276,6 +277,8 @@ class Wheel {
 
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    const palette = getWheelPalette(this.group);
+
     for (let i = 0; i < sliceCount; i += 1) {
       const start = this.rotation + i * angleStep;
       const end = start + angleStep;
@@ -283,7 +286,7 @@ class Wheel {
       ctx.moveTo(center, center);
       ctx.arc(center, center, radius - 6, start, end);
       ctx.closePath();
-      ctx.fillStyle = entries.length ? palettes[this.group][i % palettes[this.group].length] : getThemeColor("--theme-btn-secondary-bg", "#ffe5f4");
+      ctx.fillStyle = entries.length ? palette[i % palette.length] : getThemeColor("--theme-btn-secondary-bg", "#ffe5f4");
       ctx.fill();
 
       if (entries.length) {
@@ -304,10 +307,16 @@ class Wheel {
     }
 
     ctx.beginPath();
+    ctx.arc(center, center, radius - 6, 0, TWO_PI);
+    ctx.strokeStyle = getThemeColor("--theme-wheel-border", getThemeColor("--theme-canvas-border", "#ffc2e3"));
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.beginPath();
     ctx.arc(center, center, 17, 0, TWO_PI);
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = getThemeColor("--theme-center-fill", "#fff");
     ctx.fill();
-    ctx.strokeStyle = getThemeColor("--theme-base", DEFAULT_THEME_BASE);
+    ctx.strokeStyle = getThemeColor("--theme-center-stroke", getThemeColor("--theme-base", DEFAULT_THEME_BASE));
     ctx.lineWidth = 3;
     ctx.stroke();
   }
