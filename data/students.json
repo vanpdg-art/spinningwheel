@@ -7,9 +7,7 @@
       "name": "Nguyễn Trần Quang Anh"
     },
     {
-      "name": "Bùi Gia Bảo",
-      "priority": 7,
-      "exclusiveID": 1002
+      "name": "Bùi Gia Bảo"
     },
     {
       "name": "Đỗ Minh Gia Bảo"
@@ -36,7 +34,9 @@
       "name": "Lê Quang Minh"
     },
     {
-      "name": "Nguyễn Đức Minh"
+      "name": "Nguyễn Đức Minh",
+      "priority": 7,
+      "exclusiveID": 1002
     },
     {
       "name": "Nguyễn Nhật Minh"
@@ -129,7 +129,9 @@
       "name": "Quách Lê Phương Linh"
     },
     {
-      "name": "Trần Trà My"
+      "name": "Trần Trà My",
+      "priority": 7,
+      "exclusiveID": 1002
     },
     {
       "name": "Đồng Kim Ngân"
@@ -159,9 +161,7 @@
       "name": "Nguyễn Minh Hà"
     },
     {
-      "name": "Trần Ngọc Minh",
-      "priority": 7,
-      "exclusiveID": 1002
+      "name": "Trần Ngọc Minh"
     },
     {
       "name": "Hồ Bảo Trân"
