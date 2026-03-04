@@ -11,11 +11,24 @@ const state = {
   spinning: false,
   usedPairs: new Set(),
   pairHistory: [],
+  settings: {
+    spinDurationMs: 3600,
+    recentCount: 3,
+  },
 };
 
 const elements = {
   spinBtn: document.getElementById("spin-btn"),
   resetBtn: document.getElementById("reset-btn"),
+  settingsBtn: document.getElementById("settings-btn"),
+  settingsCloseBtn: document.getElementById("settings-close-btn"),
+  settingsBackdrop: document.getElementById("settings-backdrop"),
+  settingsPanel: document.getElementById("settings-panel"),
+  themeColorInput: document.getElementById("theme-color"),
+  themeResetBtn: document.getElementById("theme-reset-btn"),
+  spinDurationRange: document.getElementById("spin-duration-range"),
+  spinDurationValue: document.getElementById("spin-duration-value"),
+  historyCountInput: document.getElementById("history-count-input"),
   maleCanvas: document.getElementById("male-wheel"),
   femaleCanvas: document.getElementById("female-wheel"),
   maleName: document.getElementById("male-name"),
@@ -27,10 +40,193 @@ const elements = {
   refillStatus: document.getElementById("refill-status"),
 };
 
-const palettes = {
+const DEFAULT_THEME_BASE = "#ff5eaf";
+
+let palettes = {
   male: ["#ff9ecf", "#ff7dc0", "#ffaed8", "#ff92cb", "#ffbede", "#ff8fc6"],
   female: ["#ffb6df", "#ff97d0", "#ffc9e8", "#ff84c7", "#ffaddb", "#ff6dbc"],
 };
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function hexToRgb(hex) {
+  const normalized = hex.trim().replace("#", "");
+  const expanded = normalized.length === 3
+    ? normalized
+        .split("")
+        .map((char) => `${char}${char}`)
+        .join("")
+    : normalized;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) {
+    return null;
+  }
+
+  return {
+    r: parseInt(expanded.slice(0, 2), 16),
+    g: parseInt(expanded.slice(2, 4), 16),
+    b: parseInt(expanded.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex({ r, g, b }) {
+  return `#${[r, g, b]
+    .map((value) => clamp(Math.round(value), 0, 255).toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function rgbToHsl({ r, g, b }) {
+  const rNorm = r / 255;
+  const gNorm = g / 255;
+  const bNorm = b / 255;
+  const max = Math.max(rNorm, gNorm, bNorm);
+  const min = Math.min(rNorm, gNorm, bNorm);
+  const delta = max - min;
+  let h = 0;
+  const l = (max + min) / 2;
+  let s = 0;
+
+  if (delta !== 0) {
+    s = delta / (1 - Math.abs(2 * l - 1));
+    switch (max) {
+      case rNorm:
+        h = 60 * (((gNorm - bNorm) / delta) % 6);
+        break;
+      case gNorm:
+        h = 60 * ((bNorm - rNorm) / delta + 2);
+        break;
+      default:
+        h = 60 * ((rNorm - gNorm) / delta + 4);
+        break;
+    }
+  }
+
+  if (h < 0) {
+    h += 360;
+  }
+
+  return { h, s, l };
+}
+
+function hslToRgb({ h, s, l }) {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let rPrime = 0;
+  let gPrime = 0;
+  let bPrime = 0;
+
+  if (h >= 0 && h < 60) {
+    rPrime = c;
+    gPrime = x;
+  } else if (h < 120) {
+    rPrime = x;
+    gPrime = c;
+  } else if (h < 180) {
+    gPrime = c;
+    bPrime = x;
+  } else if (h < 240) {
+    gPrime = x;
+    bPrime = c;
+  } else if (h < 300) {
+    rPrime = x;
+    bPrime = c;
+  } else {
+    rPrime = c;
+    bPrime = x;
+  }
+
+  return {
+    r: (rPrime + m) * 255,
+    g: (gPrime + m) * 255,
+    b: (bPrime + m) * 255,
+  };
+}
+
+function adjustLightness(hex, amount) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) {
+    return DEFAULT_THEME_BASE;
+  }
+
+  const hsl = rgbToHsl(rgb);
+  hsl.l = clamp(hsl.l + amount, 0, 1);
+  return rgbToHex(hslToRgb(hsl));
+}
+
+function buildTheme(baseHex) {
+  const baseRgb = hexToRgb(baseHex);
+  const safeBase = baseRgb ? rgbToHex(baseRgb) : DEFAULT_THEME_BASE;
+
+  return {
+    base: safeBase,
+    light: adjustLightness(safeBase, 0.18),
+    dark: adjustLightness(safeBase, -0.3),
+    text: adjustLightness(safeBase, -0.36),
+    cardBorder: adjustLightness(safeBase, 0.1),
+    bgStart: adjustLightness(safeBase, 0.24),
+    bgEnd: adjustLightness(safeBase, 0.31),
+    secondaryBg: adjustLightness(safeBase, 0.27),
+    canvasBorder: adjustLightness(safeBase, 0.2),
+    pointer: adjustLightness(safeBase, -0.06),
+    mutedAccent: adjustLightness(safeBase, -0.18),
+  };
+}
+
+function updatePalettes(theme) {
+  palettes = {
+    male: [
+      adjustLightness(theme.base, 0.15),
+      adjustLightness(theme.base, 0.07),
+      adjustLightness(theme.base, 0.2),
+      adjustLightness(theme.base, 0.1),
+      adjustLightness(theme.base, 0.24),
+      adjustLightness(theme.base, 0.05),
+    ],
+    female: [
+      adjustLightness(theme.base, 0.19),
+      adjustLightness(theme.base, 0.11),
+      adjustLightness(theme.base, 0.26),
+      adjustLightness(theme.base, 0.03),
+      adjustLightness(theme.base, 0.16),
+      adjustLightness(theme.base, -0.02),
+    ],
+  };
+}
+
+function getThemeColor(variableName, fallback) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+  return value || fallback;
+}
+
+function applyTheme(baseHex) {
+  const theme = buildTheme(baseHex);
+  const rootStyle = document.documentElement.style;
+
+  rootStyle.setProperty("--theme-base", theme.base);
+  rootStyle.setProperty("--theme-light", theme.light);
+  rootStyle.setProperty("--theme-dark", theme.dark);
+  rootStyle.setProperty("--theme-text", theme.text);
+  rootStyle.setProperty("--theme-card-border", theme.cardBorder);
+  rootStyle.setProperty("--theme-bg-start", theme.bgStart);
+  rootStyle.setProperty("--theme-bg-end", theme.bgEnd);
+  rootStyle.setProperty("--theme-btn-secondary-bg", theme.secondaryBg);
+  rootStyle.setProperty("--theme-canvas-border", theme.canvasBorder);
+  rootStyle.setProperty("--theme-pointer", theme.pointer);
+  rootStyle.setProperty("--theme-accent-muted", theme.mutedAccent);
+
+  if (elements.themeColorInput) {
+    elements.themeColorInput.value = theme.base;
+  }
+
+  updatePalettes(theme);
+  if (state.activeMale.length || state.activeFemale.length) {
+    maleWheel.draw(state.activeMale);
+    femaleWheel.draw(state.activeFemale);
+  }
+}
 
 class Wheel {
   constructor(canvas, group) {
@@ -56,7 +252,7 @@ class Wheel {
       ctx.moveTo(center, center);
       ctx.arc(center, center, radius - 6, start, end);
       ctx.closePath();
-      ctx.fillStyle = entries.length ? palettes[this.group][i % palettes[this.group].length] : "#ffe5f4";
+      ctx.fillStyle = entries.length ? palettes[this.group][i % palettes[this.group].length] : getThemeColor("--theme-btn-secondary-bg", "#ffe5f4");
       ctx.fill();
 
       if (entries.length) {
@@ -68,7 +264,7 @@ class Wheel {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(mid + Math.PI / 2);
-        ctx.fillStyle = "#5f1642";
+        ctx.fillStyle = getThemeColor("--theme-text", "#5f1642");
         ctx.font = "bold 15px Segoe UI, sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(entries[i].name, 0, 0);
@@ -80,7 +276,7 @@ class Wheel {
     ctx.arc(center, center, 17, 0, TWO_PI);
     ctx.fillStyle = "#fff";
     ctx.fill();
-    ctx.strokeStyle = "#ff5eaf";
+    ctx.strokeStyle = getThemeColor("--theme-base", DEFAULT_THEME_BASE);
     ctx.lineWidth = 3;
     ctx.stroke();
   }
@@ -113,6 +309,89 @@ class Wheel {
 
 const maleWheel = new Wheel(elements.maleCanvas, "male");
 const femaleWheel = new Wheel(elements.femaleCanvas, "female");
+
+function updateSpinDurationLabel() {
+  if (!elements.spinDurationValue) {
+    return;
+  }
+
+  const seconds = (state.settings.spinDurationMs / 1000).toFixed(1);
+  elements.spinDurationValue.textContent = `${seconds}s`;
+}
+
+function syncSettingsInputs() {
+  if (elements.spinDurationRange) {
+    elements.spinDurationRange.value = String(state.settings.spinDurationMs);
+  }
+  if (elements.historyCountInput) {
+    elements.historyCountInput.value = String(state.settings.recentCount);
+  }
+  updateSpinDurationLabel();
+}
+
+function setSettingsPanelOpen(isOpen) {
+  if (!elements.settingsPanel || !elements.settingsBackdrop || !elements.settingsBtn) {
+    return;
+  }
+
+  elements.settingsPanel.classList.toggle("open", isOpen);
+  elements.settingsPanel.setAttribute("aria-hidden", String(!isOpen));
+  elements.settingsBackdrop.hidden = !isOpen;
+  elements.settingsBtn.setAttribute("aria-expanded", String(isOpen));
+}
+
+function bindSettingsPanelControls() {
+  if (elements.settingsBtn) {
+    elements.settingsBtn.addEventListener("click", () => setSettingsPanelOpen(true));
+  }
+
+  if (elements.settingsCloseBtn) {
+    elements.settingsCloseBtn.addEventListener("click", () => setSettingsPanelOpen(false));
+  }
+
+  if (elements.settingsBackdrop) {
+    elements.settingsBackdrop.addEventListener("click", () => setSettingsPanelOpen(false));
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      setSettingsPanelOpen(false);
+    }
+  });
+}
+
+function bindAdditionalSettings() {
+  if (elements.spinDurationRange) {
+    elements.spinDurationRange.addEventListener("input", (event) => {
+      const nextValue = Number(event.target.value);
+      state.settings.spinDurationMs = clamp(nextValue, 1800, 6000);
+      updateSpinDurationLabel();
+    });
+  }
+
+  if (elements.historyCountInput) {
+    elements.historyCountInput.addEventListener("input", (event) => {
+      const nextValue = Number(event.target.value);
+      state.settings.recentCount = clamp(Math.round(nextValue) || 3, 1, 8);
+      event.target.value = String(state.settings.recentCount);
+      renderResult();
+    });
+  }
+}
+
+function bindThemeControls() {
+  if (elements.themeColorInput) {
+    elements.themeColorInput.addEventListener("input", (event) => {
+      applyTheme(event.target.value);
+    });
+  }
+
+  if (elements.themeResetBtn) {
+    elements.themeResetBtn.addEventListener("click", () => {
+      applyTheme(DEFAULT_THEME_BASE);
+    });
+  }
+}
 
 async function init() {
   try {
@@ -384,9 +663,12 @@ async function spinBoth() {
   const maleFinal = wheelRotationForWinner(maleEntries, pair.male.name, maleWheel.rotation);
   const femaleFinal = wheelRotationForWinner(femaleEntries, pair.female.name, femaleWheel.rotation);
 
+  const maleDuration = state.settings.spinDurationMs;
+  const femaleDuration = Math.max(1600, state.settings.spinDurationMs - 250);
+
   await Promise.all([
-    maleWheel.animateTo(maleFinal, maleEntries, 3800),
-    femaleWheel.animateTo(femaleFinal, femaleEntries, 3500),
+    maleWheel.animateTo(maleFinal, maleEntries, maleDuration),
+    femaleWheel.animateTo(femaleFinal, femaleEntries, femaleDuration),
   ]);
 
   state.current = pair;
@@ -426,7 +708,7 @@ function renderResult() {
 
   const latest = `${state.current.male?.name ?? "(none)"} + ${state.current.female?.name ?? "(none)"}`;
   const history = state.pairHistory
-    .slice(-3)
+    .slice(-state.settings.recentCount)
     .map((pair) => `${pair.male} + ${pair.female}`)
     .join(" • ");
 
@@ -448,5 +730,10 @@ function renderAll() {
 
 elements.spinBtn.addEventListener("click", spinBoth);
 elements.resetBtn.addEventListener("click", resetPools);
+bindThemeControls();
+bindSettingsPanelControls();
+bindAdditionalSettings();
+syncSettingsInputs();
+applyTheme(DEFAULT_THEME_BASE);
 
 init();
