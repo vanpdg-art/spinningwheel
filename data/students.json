@@ -7,7 +7,9 @@
       "name": "Nguyễn Trần Quang Anh"
     },
     {
-      "name": "Bùi Gia Bảo"
+      "name": "Bùi Gia Bảo",
+      "priority": 7,
+      "exclusiveID": 1002
     },
     {
       "name": "Đỗ Minh Gia Bảo"
@@ -34,9 +36,7 @@
       "name": "Lê Quang Minh"
     },
     {
-      "name": "Nguyễn Đức Minh",
-      "priority": 7,
-      "exclusiveID": 1002
+      "name": "Nguyễn Đức Minh"
     },
     {
       "name": "Nguyễn Nhật Minh"
