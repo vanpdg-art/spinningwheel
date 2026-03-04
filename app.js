@@ -1,4 +1,5 @@
 const TWO_PI = Math.PI * 2;
+const DEFAULT_PRIORITY = 9999;
 
 const state = {
   allStudents: { male: [], female: [] },
@@ -7,11 +8,6 @@ const state = {
   spinning: false,
   usedPairs: new Set(),
   pairHistory: [],
-  config: {
-    priorityMode: false,
-    priorityPairs: [],
-    exclusiveMap: { male: new Map(), female: new Map() },
-  },
 };
 
 const elements = {
@@ -123,7 +119,6 @@ async function init() {
     const data = await response.json();
     state.allStudents.male = normalizeGroup(data.male);
     state.allStudents.female = normalizeGroup(data.female);
-    state.config = normalizeConfig(data);
     state.usedPairs = new Set();
     state.pairHistory = [];
     refillPool("male");
@@ -141,58 +136,53 @@ function normalizeGroup(list) {
   }
 
   return list
-    .map((entry) => {
-      if (typeof entry === "string") {
-        return { name: entry, excluded: false, priority: false };
+    .map((entry, index) => {
+      if (!entry || typeof entry.name !== "string") {
+        return null;
       }
-      if (entry && typeof entry.name === "string") {
-        return {
-          name: entry.name,
-          excluded: Boolean(entry.excluded),
-          priority: Boolean(entry.priority),
-        };
-      }
-      return null;
+
+      const priority = Number.isFinite(Number(entry.priority)) ? Number(entry.priority) : DEFAULT_PRIORITY;
+      const exclusiveID = Number.isFinite(Number(entry.exclusiveID)) ? Number(entry.exclusiveID) : null;
+
+      return {
+        name: entry.name,
+        excluded: Boolean(entry.excluded),
+        priority,
+        exclusiveID,
+        order: index,
+      };
     })
     .filter(Boolean);
-}
-
-function normalizeConfig(data) {
-  const priorityPairs = Array.isArray(data.priorityPairs)
-    ? data.priorityPairs.filter((pair) => typeof pair?.male === "string" && typeof pair?.female === "string")
-    : [];
-
-  const exclusivePairs = Array.isArray(data.exclusivePairs)
-    ? data.exclusivePairs.filter((pair) => typeof pair?.male === "string" && typeof pair?.female === "string")
-    : [];
-
-  const exclusiveMale = new Map();
-  const exclusiveFemale = new Map();
-  for (const pair of exclusivePairs) {
-    exclusiveMale.set(pair.male, pair.female);
-    exclusiveFemale.set(pair.female, pair.male);
-  }
-
-  return {
-    priorityMode: Boolean(data.priorityMode),
-    priorityPairs,
-    exclusiveMap: {
-      male: exclusiveMale,
-      female: exclusiveFemale,
-    },
-  };
 }
 
 function filteredGroup(group) {
   return state.allStudents[group].filter((student) => !student.excluded);
 }
 
+function sortByQueue(a, b) {
+  if (a.priority !== b.priority) {
+    return a.priority - b.priority;
+  }
+  if (a.order !== b.order) {
+    return a.order - b.order;
+  }
+  return a.name.localeCompare(b.name);
+}
+
 function refillPool(group) {
-  state.pools[group] = shuffle([...filteredGroup(group)]);
+  state.pools[group] = [...filteredGroup(group)].sort(sortByQueue);
 }
 
 function pairKey(maleName, femaleName) {
   return `${maleName}::${femaleName}`;
+}
+
+function isExclusiveCompatible(maleEntry, femaleEntry) {
+  if (maleEntry.exclusiveID == null && femaleEntry.exclusiveID == null) {
+    return true;
+  }
+
+  return maleEntry.exclusiveID != null && maleEntry.exclusiveID === femaleEntry.exclusiveID;
 }
 
 function removeByName(group, name) {
@@ -203,88 +193,70 @@ function removeByName(group, name) {
   return state.pools[group].splice(index, 1)[0];
 }
 
-function candidateFemalesForMale(maleName) {
-  const requiredFemale = state.config.exclusiveMap.male.get(maleName);
-  if (requiredFemale) {
-    const match = state.pools.female.find((entry) => entry.name === requiredFemale);
-    if (!match) {
-      return [];
-    }
+function buildCandidatePairs() {
+  const pairs = [];
 
-    const key = pairKey(maleName, requiredFemale);
-    return state.usedPairs.has(key) ? [] : [match];
+  for (const maleEntry of state.pools.male) {
+    for (const femaleEntry of state.pools.female) {
+      if (!isExclusiveCompatible(maleEntry, femaleEntry)) {
+        continue;
+      }
+
+      const key = pairKey(maleEntry.name, femaleEntry.name);
+      if (state.usedPairs.has(key)) {
+        continue;
+      }
+
+      pairs.push({
+        male: maleEntry,
+        female: femaleEntry,
+        key,
+        rank: Math.min(maleEntry.priority, femaleEntry.priority),
+      });
+    }
   }
 
-  return state.pools.female.filter((femaleEntry) => {
-    const reservedMale = state.config.exclusiveMap.female.get(femaleEntry.name);
-    if (reservedMale && reservedMale !== maleName) {
-      return false;
+  return pairs.sort((a, b) => {
+    if (a.rank !== b.rank) {
+      return a.rank - b.rank;
     }
-
-    return !state.usedPairs.has(pairKey(maleName, femaleEntry.name));
+    if (a.male.priority !== b.male.priority) {
+      return a.male.priority - b.male.priority;
+    }
+    if (a.female.priority !== b.female.priority) {
+      return a.female.priority - b.female.priority;
+    }
+    if (a.male.order !== b.male.order) {
+      return a.male.order - b.male.order;
+    }
+    return a.female.order - b.female.order;
   });
 }
 
-function attemptPair(maleName, femaleName) {
-  const maleWinner = removeByName("male", maleName);
-  const femaleWinner = removeByName("female", femaleName);
+function pickPairFromCurrentPools() {
+  const candidatePairs = buildCandidatePairs();
+  const nextPair = candidatePairs[0];
+  if (!nextPair) {
+    return null;
+  }
 
+  const maleWinner = removeByName("male", nextPair.male.name);
+  const femaleWinner = removeByName("female", nextPair.female.name);
   if (!maleWinner || !femaleWinner) {
     if (maleWinner) {
       state.pools.male.push(maleWinner);
+      state.pools.male.sort(sortByQueue);
     }
     if (femaleWinner) {
       state.pools.female.push(femaleWinner);
+      state.pools.female.sort(sortByQueue);
     }
     return null;
   }
 
-  const key = pairKey(maleWinner.name, femaleWinner.name);
-  state.usedPairs.add(key);
-  state.pairHistory.push({ male: maleWinner.name, female: femaleWinner.name });
-  return { male: maleWinner, female: femaleWinner };
-}
-
-function pickPairFromCurrentPools() {
-  if (state.config.priorityMode) {
-    for (const pair of state.config.priorityPairs) {
-      if (state.usedPairs.has(pairKey(pair.male, pair.female))) {
-        continue;
-      }
-
-      const maleInPool = state.pools.male.some((entry) => entry.name === pair.male);
-      const femaleInPool = state.pools.female.some((entry) => entry.name === pair.female);
-      if (!maleInPool || !femaleInPool) {
-        continue;
-      }
-
-      const femaleOptions = candidateFemalesForMale(pair.male);
-      if (!femaleOptions.some((entry) => entry.name === pair.female)) {
-        continue;
-      }
-
-      const selected = attemptPair(pair.male, pair.female);
-      if (selected) {
-        return selected;
-      }
-    }
-  }
-
-  for (let i = state.pools.male.length - 1; i >= 0; i -= 1) {
-    const maleName = state.pools.male[i].name;
-    const femaleOptions = candidateFemalesForMale(maleName);
-    if (femaleOptions.length === 0) {
-      continue;
-    }
-
-    const femaleName = femaleOptions[femaleOptions.length - 1].name;
-    const selected = attemptPair(maleName, femaleName);
-    if (selected) {
-      return selected;
-    }
-  }
-
-  return null;
+  state.usedPairs.add(nextPair.key);
+  state.pairHistory.push({ male: maleWinner.name, female: femaleWinner.name, rank: nextPair.rank });
+  return { male: maleWinner, female: femaleWinner, rank: nextPair.rank };
 }
 
 function wheelRotationForWinner(entries, winnerName, currentRotation) {
@@ -314,17 +286,9 @@ async function spinBoth() {
     refillPool("female");
   }
 
-  let maleEntries = [...state.pools.male];
-  let femaleEntries = [...state.pools.female];
-  let pair = pickPairFromCurrentPools();
-
-  if (!pair) {
-    refillPool("male");
-    refillPool("female");
-    maleEntries = [...state.pools.male];
-    femaleEntries = [...state.pools.female];
-    pair = pickPairFromCurrentPools();
-  }
+  const maleEntries = [...state.pools.male];
+  const femaleEntries = [...state.pools.female];
+  const pair = pickPairFromCurrentPools();
 
   if (!pair) {
     elements.pairResult.textContent = "No valid pair can be formed with current constraints.";
@@ -371,8 +335,11 @@ function renderResult() {
   }
 
   const latest = `${state.current.male?.name ?? "(none)"} + ${state.current.female?.name ?? "(none)"}`;
-  const history = state.pairHistory.slice(-3).map((pair) => `${pair.male}+${pair.female}`).join(" | ");
-  elements.pairResult.textContent = history ? `${latest} (recent: ${history})` : latest;
+  const history = state.pairHistory
+    .slice(-4)
+    .map((pair) => `${pair.male}+${pair.female}(p${pair.rank})`)
+    .join(" | ");
+  elements.pairResult.textContent = history ? `${latest} (queue: ${history})` : latest;
 }
 
 function renderStatus() {
@@ -385,14 +352,6 @@ function renderAll() {
   renderStatus();
   maleWheel.draw(state.pools.male);
   femaleWheel.draw(state.pools.female);
-}
-
-function shuffle(list) {
-  for (let i = list.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [list[i], list[j]] = [list[j], list[i]];
-  }
-  return list;
 }
 
 elements.spinBtn.addEventListener("click", spinBoth);

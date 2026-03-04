@@ -1,24 +1,16 @@
 {
-  "priorityMode": true,
-  "priorityPairs": [
-    { "male": "Brian", "female": "Bella" },
-    { "male": "Carter", "female": "Chloe" }
-  ],
-  "exclusivePairs": [
-    { "male": "Alex", "female": "Ava" }
-  ],
   "male": [
-    { "name": "Alex" },
-    { "name": "Brian" },
-    { "name": "Carter" },
+    { "name": "Alex", "priority": 1, "exclusiveID": 1 },
+    { "name": "Brian", "priority": 2 },
+    { "name": "Carter", "priority": 3 },
     { "name": "Diego", "excluded": true },
-    { "name": "Evan" }
+    { "name": "Evan", "priority": 4 }
   ],
   "female": [
-    { "name": "Ava" },
-    { "name": "Bella" },
-    { "name": "Chloe" },
-    { "name": "Diana" },
+    { "name": "Ava", "priority": 1, "exclusiveID": 1 },
+    { "name": "Bella", "priority": 2 },
+    { "name": "Chloe", "priority": 3 },
+    { "name": "Diana", "priority": 4 },
     { "name": "Emma", "excluded": true }
   ]
 }
