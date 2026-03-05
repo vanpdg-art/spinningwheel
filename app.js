@@ -74,6 +74,23 @@ const ui = createUiController(elements, {
   },
   setAllowRespin: (allowRespin) => {
     state.settings.allowRespin = allowRespin;
+
+    if (!state.pendingSpin) {
+      return;
+    }
+
+    if (!allowRespin) {
+      applyAcceptedSpin(state.pendingSpin);
+      state.pendingSpin = null;
+      toggleResultPopup(false);
+      emitParticles();
+      renderAll();
+      return;
+    }
+
+    state.pendingSpin.respinUsed = false;
+    showSpinDecisionPopup();
+    renderAll();
   },
 });
 
