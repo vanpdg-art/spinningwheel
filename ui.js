@@ -27,6 +27,14 @@ export function createElements() {
     pairMeta: document.getElementById("pair-meta"),
     refillStatus: document.getElementById("refill-status"),
     newRoundBtn: document.getElementById("new-round-btn"),
+    particleLayer: document.getElementById("particle-layer"),
+    resultBackdrop: document.getElementById("result-backdrop"),
+    resultPopup: document.getElementById("result-popup"),
+    resultPopupMessage: document.getElementById("result-popup-message"),
+    resultPopupPair: document.getElementById("result-popup-pair"),
+    resultPopupHint: document.getElementById("result-popup-hint"),
+    resultKeepBtn: document.getElementById("result-keep-btn"),
+    resultRespinBtn: document.getElementById("result-respin-btn"),
   };
 }
 

@@ -233,7 +233,7 @@ export class Wheel {
         this.rotation = start + (finalRotation - start) * eased;
 
         if (now - lastDrawnAt >= CONFIG.animation.frameIntervalMs || t === 1) {
-          this.draw(entries, { skipLabels: t < 0.72 });
+          this.draw(entries, { skipLabels: false });
           if (typeof onTick === "function") {
             onTick(this.getEntryAtPointer(entries, this.rotation), t);
           }
