@@ -263,6 +263,19 @@ canvas {
   color: var(--theme-text);
 }
 
+
+.setting-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.setting-checkbox input {
+  width: 1rem;
+  height: 1rem;
+}
+
 .setting-value {
   margin: 0;
   font-size: 0.9rem;
