@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <div class="bg-orb orb-a" aria-hidden="true"></div>
+    <div class="bg-orb orb-b" aria-hidden="true"></div>
+    <div id="particle-layer" class="particle-layer" aria-hidden="true"></div>
+
     <main class="app-shell">
       <header class="hero">
         <h1>🎡 Vòng quay 8/3 🎀</h1>
@@ -78,6 +82,18 @@
         <label for="history-count-input">Lưu kết quả bao nhiêu cặp</label>
         <input id="history-count-input" type="number" min="1" max="8" step="1" value="3" />
       </section>
+    </aside>
+
+    <div id="result-backdrop" class="result-backdrop" hidden></div>
+    <aside id="result-popup" class="result-popup" role="dialog" aria-modal="true" aria-labelledby="result-popup-title" aria-hidden="true" hidden>
+      <h2 id="result-popup-title">💘 Cặp vừa quay xong!</h2>
+      <p id="result-popup-message" class="result-popup-message"></p>
+      <p id="result-popup-pair" class="result-popup-pair"></p>
+      <div class="result-popup-actions">
+        <button id="result-keep-btn" class="btn btn-primary" type="button">Giữ cặp này</button>
+        <button id="result-respin-btn" class="btn btn-secondary" type="button">Quay lại 1 lần</button>
+      </div>
+      <p id="result-popup-hint" class="result-popup-hint"></p>
     </aside>
 
     <script type="module" src="./app.js"></script>

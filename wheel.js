@@ -79,6 +79,18 @@ export class Wheel {
       ctx.fillStyle = entries.length ? palette[i % palette.length] : colors.empty;
       ctx.fill();
 
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.arc(center, center, radius - 6, start, end);
+      ctx.closePath();
+      const gloss = ctx.createRadialGradient(center, center, radius * 0.2, center, center, radius * 0.98);
+      gloss.addColorStop(0, "rgba(255,255,255,0.24)");
+      gloss.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = gloss;
+      ctx.fill();
+      ctx.restore();
+
       if (entries.length && !skipLabels) {
         const mid = start + angleStep / 2;
         const labelRadius = entries.length > 20 ? radius * 0.73 : radius * 0.67;
@@ -102,7 +114,13 @@ export class Wheel {
     ctx.beginPath();
     ctx.arc(center, center, radius - 6, 0, CONFIG.geometry.TWO_PI);
     ctx.strokeStyle = colors.border;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(center, center, radius - 16, 0, CONFIG.geometry.TWO_PI);
+    ctx.strokeStyle = "rgba(255,255,255,0.7)";
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.beginPath();
@@ -184,20 +202,41 @@ export class Wheel {
     return `${clipped}${ellipsis}`;
   }
 
-  animateTo(finalRotation, entries, durationMs = CONFIG.settings.defaultSpinDurationMs) {
+  getEntryAtPointer(entries, rotation = this.rotation) {
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return null;
+    }
+
+    const angleStep = CONFIG.geometry.TWO_PI / entries.length;
+    const pointerAngle = -Math.PI / 2;
+    const normalizedRotation = ((rotation % CONFIG.geometry.TWO_PI) + CONFIG.geometry.TWO_PI) % CONFIG.geometry.TWO_PI;
+    const wheelAngleAtPointer = pointerAngle - normalizedRotation;
+    const normalizedPointer = ((wheelAngleAtPointer % CONFIG.geometry.TWO_PI) + CONFIG.geometry.TWO_PI) % CONFIG.geometry.TWO_PI;
+    const index = Math.floor(normalizedPointer / angleStep) % entries.length;
+    return entries[index] ?? null;
+  }
+
+  animateTo(finalRotation, entries, durationMs = CONFIG.settings.defaultSpinDurationMs, hooks = {}) {
     const start = this.rotation;
     const startTime = performance.now();
     let lastDrawnAt = 0;
+    const { onTick } = hooks;
 
     return new Promise((resolve) => {
       const frame = (now) => {
         const elapsed = now - startTime;
         const t = Math.min(elapsed / durationMs, 1);
-        const eased = 1 - (1 - t) ** 3;
+
+        const easeOutQuint = 1 - (1 - t) ** 5;
+        const lateWobble = Math.sin(t * Math.PI * 12) * (1 - t) ** 2 * 0.012;
+        const eased = Math.min(1, easeOutQuint + lateWobble);
         this.rotation = start + (finalRotation - start) * eased;
 
         if (now - lastDrawnAt >= CONFIG.animation.frameIntervalMs || t === 1) {
-          this.draw(entries, { skipLabels: t < 1 });
+          this.draw(entries, { skipLabels: false });
+          if (typeof onTick === "function") {
+            onTick(this.getEntryAtPointer(entries, this.rotation), t);
+          }
           lastDrawnAt = now;
         }
 

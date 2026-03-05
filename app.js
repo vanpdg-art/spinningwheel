@@ -32,7 +32,15 @@ const state = {
     recentCount: CONFIG.settings.defaultRecentCount,
   },
   theme: null,
+  pendingSpin: null,
 };
+
+const FUNNY_SPIN_MESSAGES = [
+  "✨ Chemistry check... loading romantic algorithm.",
+  "😂 If this pairing is awkward, you get one rescue respin.",
+  "🎉 Destiny has spoken. But destiny allows one appeal.",
+  "🫶 Cute matchup unlocked! Need a reroll? You have one.",
+];
 
 const elements = createElements();
 
@@ -121,8 +129,125 @@ function updateRoundState(reason) {
     : null;
 }
 
+
+function updateLiveSpinLabel(element, candidate) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent = candidate?.name ?? "…";
+  element.title = candidate?.name ?? "";
+}
+
+function randomFunnyMessage() {
+  return FUNNY_SPIN_MESSAGES[Math.floor(Math.random() * FUNNY_SPIN_MESSAGES.length)];
+}
+
+function toggleResultPopup(open) {
+  if (!elements.resultPopup || !elements.resultBackdrop) {
+    return;
+  }
+
+  elements.resultPopup.hidden = !open;
+  elements.resultBackdrop.hidden = !open;
+  elements.resultPopup.setAttribute("aria-hidden", String(!open));
+  document.body.classList.toggle("popup-open", open);
+
+  if (!state.spinning) {
+    elements.spinBtn.disabled = open;
+    elements.resetBtn.disabled = open;
+  }
+}
+
+function emitParticles() {
+  if (!elements.particleLayer) {
+    return;
+  }
+
+  for (let i = 0; i < 24; i += 1) {
+    const piece = document.createElement("span");
+    piece.className = "particle";
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = `hsl(${315 + Math.random() * 70} 95% ${58 + Math.random() * 18}%)`;
+    piece.style.animationDelay = `${Math.random() * 130}ms`;
+    piece.style.setProperty("--drift", `${-30 + Math.random() * 60}px`);
+    elements.particleLayer.append(piece);
+    setTimeout(() => piece.remove(), 1400);
+  }
+}
+
+function applyAcceptedSpin(pending) {
+  state.activeMale = pending.picked.male;
+  state.activeFemale = pending.picked.female;
+  state.usedPairs = pending.picked.usedPairs;
+  state.pairHistory = pending.picked.pairHistory;
+  state.current = pending.picked.pair;
+
+  if (isEitherPoolBelowThreshold(state)) {
+    const nextEnsured = ensurePoolsForSpin(state);
+    setPools(nextEnsured.male, nextEnsured.female);
+    pending.refillMessages.push(...nextEnsured.messages);
+  }
+
+  elements.refillStatus.textContent = pending.refillMessages.join(" • ");
+}
+
+function showSpinDecisionPopup() {
+  if (!state.pendingSpin) {
+    return;
+  }
+
+  const { picked, respinUsed } = state.pendingSpin;
+  const pairText = `${picked.pair.male.name} + ${picked.pair.female.name}`;
+  elements.resultPopupPair.textContent = pairText;
+  elements.resultPopupMessage.textContent = randomFunnyMessage();
+
+  if (respinUsed) {
+    elements.resultPopupHint.textContent = "Respin already used. Keep this pair 💞";
+    elements.resultRespinBtn.disabled = true;
+  } else {
+    elements.resultPopupHint.textContent = "You may respin once. You can still get the same pair again 🎲";
+    elements.resultRespinBtn.disabled = false;
+  }
+
+  toggleResultPopup(true);
+}
+
+async function animatePickedPair(maleEntries, femaleEntries, pickedPair) {
+  state.spinning = true;
+  elements.spinBtn.disabled = true;
+  elements.resetBtn.disabled = true;
+  elements.maleWheelCard?.classList.add("spinning");
+  elements.femaleWheelCard?.classList.add("spinning");
+
+  const maleFinal = wheelRotationForWinner(maleEntries, pickedPair.male.id, maleWheel.rotation);
+  const femaleFinal = wheelRotationForWinner(femaleEntries, pickedPair.female.id, femaleWheel.rotation);
+
+  const maleDuration = state.settings.spinDurationMs;
+  const femaleDuration = Math.max(
+    CONFIG.animation.minFemaleDurationMs,
+    state.settings.spinDurationMs - CONFIG.animation.femaleDurationOffsetMs,
+  );
+
+  await Promise.all([
+    maleWheel.animateTo(maleFinal, maleEntries, maleDuration, {
+      onTick: (entry) => updateLiveSpinLabel(elements.maleName, entry),
+    }),
+    femaleWheel.animateTo(femaleFinal, femaleEntries, femaleDuration, {
+      onTick: (entry) => updateLiveSpinLabel(elements.femaleName, entry),
+    }),
+  ]);
+
+  state.current = pickedPair;
+  state.spinning = false;
+  elements.spinBtn.disabled = false;
+  elements.resetBtn.disabled = false;
+  elements.maleWheelCard?.classList.remove("spinning");
+  elements.femaleWheelCard?.classList.remove("spinning");
+}
+
 async function spinBoth() {
-  if (state.spinning || state.roundState?.requiresConfirmation) {
+  if (state.spinning || state.roundState?.requiresConfirmation || state.pendingSpin) {
     return;
   }
 
@@ -150,44 +275,23 @@ async function spinBoth() {
     return;
   }
 
-  state.activeMale = picked.male;
-  state.activeFemale = picked.female;
-  state.usedPairs = picked.usedPairs;
-  state.pairHistory = picked.pairHistory;
   updateRoundState(null);
 
-  state.spinning = true;
-  elements.spinBtn.disabled = true;
-
-  const maleFinal = wheelRotationForWinner(maleEntries, picked.pair.male.id, maleWheel.rotation);
-  const femaleFinal = wheelRotationForWinner(femaleEntries, picked.pair.female.id, femaleWheel.rotation);
-
-  const maleDuration = state.settings.spinDurationMs;
-  const femaleDuration = Math.max(
-    CONFIG.animation.minFemaleDurationMs,
-    state.settings.spinDurationMs - CONFIG.animation.femaleDurationOffsetMs,
-  );
-
-  await Promise.all([
-    maleWheel.animateTo(maleFinal, maleEntries, maleDuration),
-    femaleWheel.animateTo(femaleFinal, femaleEntries, femaleDuration),
-  ]);
-
-  state.current = picked.pair;
-  state.spinning = false;
-  elements.spinBtn.disabled = false;
-
-  if (isEitherPoolBelowThreshold(state)) {
-    const nextEnsured = ensurePoolsForSpin(state);
-    setPools(nextEnsured.male, nextEnsured.female);
-    refillMessages.push(...nextEnsured.messages);
-  }
-
-  elements.refillStatus.textContent = refillMessages.join(" • ");
+  await animatePickedPair(maleEntries, femaleEntries, picked.pair);
+  state.pendingSpin = {
+    baseMale: maleEntries,
+    baseFemale: femaleEntries,
+    picked,
+    refillMessages,
+    respinUsed: false,
+  };
   renderAll();
+  showSpinDecisionPopup();
 }
 
 function resetPools() {
+  state.pendingSpin = null;
+  toggleResultPopup(false);
   startNewRound("Pools reset for a new round.");
   state.current = { male: null, female: null };
   state.pairHistory = [];
@@ -220,6 +324,50 @@ async function init() {
 
 elements.spinBtn.addEventListener("click", spinBoth);
 elements.resetBtn.addEventListener("click", resetPools);
+elements.resultKeepBtn?.addEventListener("click", () => {
+  if (!state.pendingSpin) {
+    return;
+  }
+
+  applyAcceptedSpin(state.pendingSpin);
+  state.pendingSpin = null;
+  toggleResultPopup(false);
+  emitParticles();
+  renderAll();
+});
+
+elements.resultRespinBtn?.addEventListener("click", async () => {
+  if (!state.pendingSpin || state.pendingSpin.respinUsed) {
+    return;
+  }
+
+  const before = state.pendingSpin;
+  const replayState = {
+    activeMale: before.baseMale,
+    activeFemale: before.baseFemale,
+    usedPairs: state.usedPairs,
+    pairHistory: state.pairHistory,
+  };
+
+  const repicked = pickPairFromCurrentPools(replayState);
+  if (!repicked.pair) {
+    state.pendingSpin.respinUsed = true;
+    showSpinDecisionPopup();
+    return;
+  }
+
+  toggleResultPopup(false);
+  await animatePickedPair(before.baseMale, before.baseFemale, repicked.pair);
+
+  state.pendingSpin = {
+    ...before,
+    picked: repicked,
+    respinUsed: true,
+  };
+  renderAll();
+  showSpinDecisionPopup();
+});
+
 elements.newRoundBtn.addEventListener("click", () => {
   startNewRound();
   renderAll();
