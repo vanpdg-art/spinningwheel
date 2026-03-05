@@ -31,6 +31,7 @@ const state = {
   settings: {
     spinDurationMs: CONFIG.settings.defaultSpinDurationMs,
     recentCount: CONFIG.settings.defaultRecentCount,
+    allowRespin: CONFIG.settings.defaultAllowRespin,
   },
   theme: null,
   pendingSpin: null,
@@ -70,6 +71,9 @@ const ui = createUiController(elements, {
   },
   setRecentCount: (nextCount) => {
     state.settings.recentCount = nextCount;
+  },
+  setAllowRespin: (allowRespin) => {
+    state.settings.allowRespin = allowRespin;
   },
 });
 
@@ -203,7 +207,10 @@ function showSpinDecisionPopup() {
   elements.resultPopupPair.textContent = pairText;
   elements.resultPopupMessage.textContent = randomFunnyMessage();
 
-  if (respinUsed) {
+  if (!state.settings.allowRespin) {
+    elements.resultPopupHint.textContent = "Đã tắt tính năng quay lại trong phần cài đặt.";
+    elements.resultRespinBtn.disabled = true;
+  } else if (respinUsed) {
     elements.resultPopupHint.textContent = "Đã sử dụng hết lượt quay lại, phải chịu thui 💞";
     elements.resultRespinBtn.disabled = true;
   } else {
@@ -320,8 +327,17 @@ async function spinBoth() {
     baseFemale: femaleEntries,
     picked,
     refillMessages,
-    respinUsed: false,
+    respinUsed: !state.settings.allowRespin,
   };
+
+  if (!state.settings.allowRespin) {
+    applyAcceptedSpin(state.pendingSpin);
+    state.pendingSpin = null;
+    renderAll();
+    emitParticles();
+    return;
+  }
+
   renderAll();
   showSpinDecisionPopup();
 }
@@ -374,7 +390,7 @@ elements.resultKeepBtn?.addEventListener("click", () => {
 });
 
 elements.resultRespinBtn?.addEventListener("click", async () => {
-  if (!state.pendingSpin || state.pendingSpin.respinUsed) {
+  if (!state.settings.allowRespin || !state.pendingSpin || state.pendingSpin.respinUsed) {
     return;
   }
 

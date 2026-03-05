@@ -13,6 +13,7 @@ export const CONFIG = {
   settings: {
     defaultSpinDurationMs: 3600,
     defaultRecentCount: 3,
+    defaultAllowRespin: true,
     minSpinDurationMs: 1800,
     maxSpinDurationMs: 6000,
     minHistoryCount: 1,

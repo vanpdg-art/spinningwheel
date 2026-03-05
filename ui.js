@@ -15,6 +15,7 @@ export function createElements() {
     spinDurationRange: document.getElementById("spin-duration-range"),
     spinDurationValue: document.getElementById("spin-duration-value"),
     historyCountInput: document.getElementById("history-count-input"),
+    allowRespinInput: document.getElementById("allow-respin-input"),
     maleCanvas: document.getElementById("male-wheel"),
     femaleCanvas: document.getElementById("female-wheel"),
     maleWheelCard: document.getElementById("male-wheel-card"),
@@ -47,7 +48,7 @@ const focusableSettingsSelector = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
-export function createUiController(elements, { renderResult, setSpinDuration, setRecentCount }) {
+export function createUiController(elements, { renderResult, setSpinDuration, setRecentCount, setAllowRespin }) {
   let settingsPanelOpener = null;
   let settingsPanelKeydownHandler = null;
 
@@ -97,6 +98,9 @@ export function createUiController(elements, { renderResult, setSpinDuration, se
     }
     if (elements.historyCountInput) {
       elements.historyCountInput.value = String(state.settings.recentCount);
+    }
+    if (elements.allowRespinInput) {
+      elements.allowRespinInput.checked = Boolean(state.settings.allowRespin);
     }
     updateSpinDurationLabel(state);
   }
@@ -225,6 +229,12 @@ export function createUiController(elements, { renderResult, setSpinDuration, se
         setRecentCount(bounded);
         event.target.value = String(bounded);
         renderResult();
+      });
+    }
+
+    if (elements.allowRespinInput) {
+      elements.allowRespinInput.addEventListener("change", (event) => {
+        setAllowRespin(event.target.checked);
       });
     }
   }
