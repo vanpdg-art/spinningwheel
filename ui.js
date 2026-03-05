@@ -17,6 +17,8 @@ export function createElements() {
     historyCountInput: document.getElementById("history-count-input"),
     maleCanvas: document.getElementById("male-wheel"),
     femaleCanvas: document.getElementById("female-wheel"),
+    maleWheelCard: document.getElementById("male-wheel-card"),
+    femaleWheelCard: document.getElementById("female-wheel-card"),
     maleName: document.getElementById("male-name"),
     femaleName: document.getElementById("female-name"),
     malePoolStatus: document.getElementById("male-pool-status"),

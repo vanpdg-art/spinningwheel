@@ -24,9 +24,9 @@ export const CONFIG = {
     lowThreshold: 1,
   },
   animation: {
-    minFemaleDurationMs: 1600,
-    femaleDurationOffsetMs: 250,
-    extraRotations: 5,
-    frameIntervalMs: 33,
+    minFemaleDurationMs: 1700,
+    femaleDurationOffsetMs: 220,
+    extraRotations: 6,
+    frameIntervalMs: 16,
   },
 };

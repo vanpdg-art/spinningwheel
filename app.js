@@ -121,6 +121,16 @@ function updateRoundState(reason) {
     : null;
 }
 
+
+function updateLiveSpinLabel(element, candidate) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent = candidate?.name ?? "…";
+  element.title = candidate?.name ?? "";
+}
+
 async function spinBoth() {
   if (state.spinning || state.roundState?.requiresConfirmation) {
     return;
@@ -158,6 +168,9 @@ async function spinBoth() {
 
   state.spinning = true;
   elements.spinBtn.disabled = true;
+  elements.resetBtn.disabled = true;
+  elements.maleWheelCard?.classList.add("spinning");
+  elements.femaleWheelCard?.classList.add("spinning");
 
   const maleFinal = wheelRotationForWinner(maleEntries, picked.pair.male.id, maleWheel.rotation);
   const femaleFinal = wheelRotationForWinner(femaleEntries, picked.pair.female.id, femaleWheel.rotation);
@@ -169,13 +182,20 @@ async function spinBoth() {
   );
 
   await Promise.all([
-    maleWheel.animateTo(maleFinal, maleEntries, maleDuration),
-    femaleWheel.animateTo(femaleFinal, femaleEntries, femaleDuration),
+    maleWheel.animateTo(maleFinal, maleEntries, maleDuration, {
+      onTick: (entry) => updateLiveSpinLabel(elements.maleName, entry),
+    }),
+    femaleWheel.animateTo(femaleFinal, femaleEntries, femaleDuration, {
+      onTick: (entry) => updateLiveSpinLabel(elements.femaleName, entry),
+    }),
   ]);
 
   state.current = picked.pair;
   state.spinning = false;
   elements.spinBtn.disabled = false;
+  elements.resetBtn.disabled = false;
+  elements.maleWheelCard?.classList.remove("spinning");
+  elements.femaleWheelCard?.classList.remove("spinning");
 
   if (isEitherPoolBelowThreshold(state)) {
     const nextEnsured = ensurePoolsForSpin(state);

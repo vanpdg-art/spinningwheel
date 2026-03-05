@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spinning Wheel Data Editor</title>
+    <link rel="stylesheet" href="./edit.css" />
+  </head>
+  <body>
+    <main class="editor-shell">
+      <header class="editor-header">
+        <h1>🔐 Data Editor</h1>
+        <p>Private page for editing <code>name</code>, <code>priority</code>, and <code>exclusiveID</code>.</p>
+      </header>
+
+      <section class="card actions" aria-label="editor actions">
+        <button id="add-male" type="button">Add male row</button>
+        <button id="add-female" type="button">Add female row</button>
+        <button id="copy-json" type="button">Copy JSON</button>
+        <button id="download-json" type="button">Download students.json</button>
+      </section>
+
+      <section class="card">
+        <h2>Male</h2>
+        <div class="table-wrap">
+          <table id="male-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Priority</th>
+                <th>ExclusiveID</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Female</h2>
+        <div class="table-wrap">
+          <table id="female-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Priority</th>
+                <th>ExclusiveID</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Preview JSON</h2>
+        <textarea id="json-preview" rows="14" readonly></textarea>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./edit.js"></script>
+  </body>
+</html>
