@@ -51,7 +51,8 @@
     },
     {
       "name": "Trần Ngọc Hải Nam",
-      "priority": 22
+      "priority": 22,
+      "exclusiveID": 1003
     },
     {
       "name": "Đặng Đình Nghĩa"
@@ -106,7 +107,9 @@
       "name": "Phạm Ngọc Hân"
     },
     {
-      "name": "Vũ Bảo Hân"
+      "name": "Vũ Bảo Hân",
+      "priority": 22,
+      "exclusiveID": 1003
     },
     {
       "name": "Nguyễn Phạm Hồng Hạnh"
