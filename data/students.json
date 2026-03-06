@@ -25,7 +25,9 @@
       "name": "Đoàn Minh Khang"
     },
     {
-      "name": "Bùi Duy Khánh"
+      "name": "Bùi Duy Khánh",
+      "exclusiveID": 1002,
+      "priority": 9
     },
     {
       "name": "Lưu Thành Lâm"
@@ -49,8 +51,7 @@
     },
     {
       "name": "Trần Ngọc Hải Nam",
-      "priority": 22,
-      "exclusiveID": 1002
+      "priority": 22
     },
     {
       "name": "Đặng Đình Nghĩa"
@@ -160,7 +161,7 @@
     },
     {
       "name": "Trần Ngọc Minh",
-      "priority": 22,
+      "priority": 9,
       "exclusiveID": 1002
     },
     {
